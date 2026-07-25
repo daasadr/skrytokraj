@@ -1,0 +1,93 @@
+// Prisma schema pro Skrytokraj — fáze 1
+// Poznámky k rozhodnutím jsou v PROJECT.md (sekce "Rozhodnutí a poznámky").
+
+generator client {
+  // Prisma 7: nový generátor `prisma-client` (generuje TS klienta do repa).
+  // Runtime vyžaduje driver adapter (@prisma/adapter-pg) — viz lib/prisma.ts.
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  // Prisma 7: connection URL se pro Migrate uvádí v prisma.config.ts,
+  // runtime klient se připojuje přes adapter (viz lib/prisma.ts).
+  provider = "postgresql"
+  // PostGIS extension se zapíná v migraci (viz prisma/migrations) a přes
+  // docker image postgis/postgis. Souřadnice ale zatím držíme jako Float
+  // (lat/lng) — viz zdůvodnění v PROJECT.md.
+}
+
+// --- Role uživatele ---------------------------------------------------------
+enum Role {
+  admin
+  user
+}
+
+// --- Typ bodu na mapě -------------------------------------------------------
+enum MapPointType {
+  quest // úkol (zakládá admin)
+  treasure // poklad (zakládá admin)
+  story_location // příběhové místo (zakládá admin)
+  ar_location // AR místo (zakládá admin)
+  message_box // schránka se vzkazem (zakládá i běžný uživatel)
+}
+
+// --- Viditelnost bodu -------------------------------------------------------
+enum Visibility {
+  public // vidí všichni přihlášení
+  private_user // vidí jen konkrétní příjemce (recipient)
+}
+
+// --- Uživatel ---------------------------------------------------------------
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(user)
+  createdAt    DateTime @default(now())
+
+  // body, které uživatel založil
+  createdPoints  MapPoint[] @relation("CreatedBy")
+  // soukromé schránky určené tomuto uživateli
+  receivedPoints MapPoint[] @relation("Recipient")
+
+  @@map("users")
+}
+
+// --- Bod na mapě ------------------------------------------------------------
+// Jedna sdílená tabulka pro všechny typy bodů (viz PROJECT.md — proč ne
+// oddělená tabulka MessageBox).
+model MapPoint {
+  id          String       @id @default(cuid())
+  type        MapPointType
+  name        String
+  description String?      @db.Text
+
+  // Souřadnice (WGS84). PostGIS geometry sloupec se doplní později přes
+  // raw SQL migraci, až budou potřeba prostorové dotazy.
+  lat Float
+  lng Float
+
+  visibility Visibility @default(public)
+
+  // Autor bodu
+  createdById String
+  createdBy   User   @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+
+  // Příjemce u soukromé schránky (visibility = private_user)
+  recipientId String?
+  recipient   User?   @relation("Recipient", fields: [recipientId], references: [id], onDelete: SetNull)
+
+  // Placeholder pro budoucí AR obsah (identifikátor/odkaz na model)
+  arContent String?
+
+  isActive  Boolean  @default(true) // deaktivace bez mazání
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([visibility])
+  @@index([recipientId])
+  @@map("map_points")
+}

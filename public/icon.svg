@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Skrytokraj">
+  <!-- Skulina — tenká skulina světla v temném kraji. Placeholder ikona fáze 1. -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="46%" r="42%">
+      <stop offset="0%" stop-color="#e9e2c4"/>
+      <stop offset="45%" stop-color="#8fae8b"/>
+      <stop offset="100%" stop-color="#0f1512"/>
+    </radialGradient>
+    <linearGradient id="crack" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#fbf6de"/>
+      <stop offset="100%" stop-color="#cfe0b8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0f1512"/>
+  <circle cx="256" cy="248" r="150" fill="url(#glow)" opacity="0.85"/>
+  <path d="M256 96
+           C248 150 244 190 250 236
+           C244 272 246 320 256 416
+           C266 320 268 272 262 236
+           C268 190 264 150 256 96 Z"
+        fill="url(#crack)"/>
+  <path d="M256 120 C252 180 252 300 256 392" stroke="#0f1512" stroke-width="3" opacity="0.35" fill="none"/>
+</svg>

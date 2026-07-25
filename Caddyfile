@@ -1,0 +1,8 @@
+# Skrytokraj — reverzní proxy s automatickým HTTPS.
+# Caddy si sám vyžádá a obnovuje Let's Encrypt certifikát pro doménu z {$DOMAIN}
+# (potřebuje: DNS A záznam mířící na server + otevřené porty 80 a 443).
+
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+}

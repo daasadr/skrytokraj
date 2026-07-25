@@ -1,0 +1,50 @@
+# Skrytokraj — lokální vývoj (fáze 1)
+# Spuštění jen databáze:   docker compose up -d db
+# Spuštění app + db:       docker compose up --build
+#
+# Pozn.: ostrá deployment konfigurace (Hetzner VPS) není součástí fáze 1,
+# ale struktura tomu odpovídá — app běží v kontejneru, DB samostatně.
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: skrytokraj-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: skrytokraj
+      POSTGRES_PASSWORD: skrytokraj
+      POSTGRES_DB: skrytokraj
+    ports:
+      - "5432:5432"
+    volumes:
+      - skrytokraj_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skrytokraj -d skrytokraj"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # App kontejner je volitelný pro lokální vývoj — běžně stačí spustit jen `db`
+  # a appku pouštět na hostu přes `npm run dev`. Necháváme ho tu kvůli
+  # konzistenci s produkčním nasazením.
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: skrytokraj-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://skrytokraj:skrytokraj@db:5432/skrytokraj?schema=public"
+      AUTH_SECRET: "${AUTH_SECRET:-dev-secret-change-me}"
+      AUTH_TRUST_HOST: "true"
+      NEXT_PUBLIC_MAPBOX_TOKEN: "${NEXT_PUBLIC_MAPBOX_TOKEN:-}"
+    ports:
+      - "3000:3000"
+    profiles:
+      - full # spustí se jen s `docker compose --profile full up`
+
+volumes:
+  skrytokraj_pgdata:

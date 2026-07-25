@@ -1,0 +1,75 @@
+# Skrytokraj — produkční sestava (server / Hetzner VPS).
+# Použití na serveru:
+#   git pull
+#   docker compose -f compose.prod.yml up -d --build
+# Konfigurace se čte ze souboru .env (na serveru, NEcommitovat) — viz
+# .env.production.example.
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-skrytokraj}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD musí být v .env}
+      POSTGRES_DB: ${POSTGRES_DB:-skrytokraj}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-skrytokraj} -d ${POSTGRES_DB:-skrytokraj}"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    networks:
+      - internal
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* se zapéká při buildu — když později doplníš MapTiler
+        # klíč, je potřeba přebuildovat (docker compose ... up -d --build).
+        NEXT_PUBLIC_MAPTILER_KEY: ${NEXT_PUBLIC_MAPTILER_KEY:-}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-skrytokraj}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-skrytokraj}?schema=public"
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET musí být v .env}
+      AUTH_TRUST_HOST: "true"
+      AUTH_URL: "https://${DOMAIN:?DOMAIN musí být v .env}"
+      SEED_ON_START: ${SEED_ON_START:-true}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@skrytokraj.cz}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-skrytokraj-admin}
+      SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-Kronikář (admin)}
+    networks:
+      - internal
+      - web
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN musí být v .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    networks:
+      - web
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:
+  web:

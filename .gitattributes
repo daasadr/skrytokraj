@@ -1,0 +1,5 @@
+# Skripty a Docker soubory musí mít LF (běží v Linux kontejneru).
+*.sh text eol=lf
+docker-entrypoint.sh text eol=lf
+Dockerfile text eol=lf
+Caddyfile text eol=lf

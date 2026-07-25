@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Skrytokraj">
+  <!-- Maskable varianta — motiv vyplňuje bezpečnou zónu (bez zaoblených rohů). -->
+  <defs>
+    <radialGradient id="glowM" cx="50%" cy="48%" r="55%">
+      <stop offset="0%" stop-color="#e9e2c4"/>
+      <stop offset="48%" stop-color="#8fae8b"/>
+      <stop offset="100%" stop-color="#0f1512"/>
+    </radialGradient>
+    <linearGradient id="crackM" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#fbf6de"/>
+      <stop offset="100%" stop-color="#cfe0b8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0f1512"/>
+  <circle cx="256" cy="256" r="200" fill="url(#glowM)" opacity="0.85"/>
+  <path d="M256 64
+           C246 140 240 196 248 244
+           C240 292 244 356 256 448
+           C268 356 272 292 264 244
+           C272 196 266 140 256 64 Z"
+        fill="url(#crackM)"/>
+</svg>

@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/* Skrytokraj — barevný motiv: noční les, mlha, skulina světla. */
+@theme {
+  --color-kraj-bg: #0f1512;
+  --color-kraj-bg2: #16201b;
+  --color-kraj-panel: #1b2620;
+  --color-kraj-border: #2c3a30;
+  --color-kraj-fg: #e7ecdf;
+  --color-kraj-muted: #9fb0a0;
+  --color-kraj-accent: #cde0b8; /* světlá zeleň — skulina světla */
+  --color-kraj-gold: #e9d9a4; /* teplá zlatá — kronika, poklad */
+  --color-kraj-mist: #6f8a86; /* mlha / Poodří */
+
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(120% 80% at 50% -10%, #1c2a22 0%, var(--color-kraj-bg) 55%),
+    var(--color-kraj-bg);
+  color: var(--color-kraj-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+}
+
+/* Mapbox popup — sjednocení se stylem appky (přebíjí výchozí bílou) */
+.mapboxgl-popup-content {
+  background: var(--color-kraj-panel);
+  color: var(--color-kraj-fg);
+  border: 1px solid var(--color-kraj-border);
+  border-radius: 0.75rem;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.mapboxgl-popup-close-button {
+  color: var(--color-kraj-muted);
+  font-size: 1.1rem;
+  padding: 0 0.4rem;
+}
+.mapboxgl-popup-tip {
+  border-top-color: var(--color-kraj-panel) !important;
+  border-bottom-color: var(--color-kraj-panel) !important;
+}
