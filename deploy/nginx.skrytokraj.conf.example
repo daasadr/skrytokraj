@@ -1,0 +1,61 @@
+# Skrytokraj — nginx konfigurace pro subdoménu (server 43, hostitelský nginx).
+#
+# Provoz: prohlížeč → nginx (HTTPS na 443) → 127.0.0.1:3003 (Docker app, jen localhost).
+# Databáze není přes nginx ani ven vystavená (jen interní Docker síť).
+#
+# Instalace na serveru:
+#   1) Nahraď skrytokraj.tvojedomena.cz svou subdoménou (2×), port 3003 ať sedí s APP_PORT.
+#   2) sudo cp deploy/nginx.skrytokraj.conf.example /etc/nginx/sites-available/skrytokraj
+#   3) sudo ln -s /etc/nginx/sites-available/skrytokraj /etc/nginx/sites-enabled/skrytokraj
+#   4) sudo nginx -t && sudo systemctl reload nginx
+#   5) sudo certbot --nginx -d skrytokraj.tvojedomena.cz
+#      (certbot sám doplní blok listen 443 + certifikát a přesměruje HTTP→HTTPS)
+#
+# ⚠️ Bezpečnost: app běží na 127.0.0.1:3003 — do ufw port 3003 NEpřidávej.
+#    Ven zůstávají otevřené jen 80/443 (nginx) a SSH.
+
+upstream skrytokraj_app {
+    # PORT musí sedět s APP_PORT v .env (výchozí 3003)
+    server 127.0.0.1:3003;
+    keepalive 16;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name skrytokraj.tvojedomena.cz;
+
+    # Po vydání certifikátu certbotem tento blok obslouží jen ACME challenge
+    # a zbytek přesměruje na HTTPS (certbot to nastaví automaticky).
+
+    add_header X-Content-Type-Options "nosniff" always;
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript
+               application/x-javascript text/xml application/xml image/svg+xml;
+    gzip_min_length 1024;
+
+    # Vzkazy jsou krátké texty; klidně nech menší limit.
+    client_max_body_size 2m;
+
+    # Statické soubory Next.js jsou immutable (obsahují hash) — dlouhá cache.
+    location /_next/static/ {
+        proxy_pass http://skrytokraj_app;
+        proxy_cache_valid 200 365d;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    location / {
+        proxy_pass http://skrytokraj_app;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # Důležité pro Auth.js — aby app věděla, že běží přes HTTPS:
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 90s;
+    }
+}

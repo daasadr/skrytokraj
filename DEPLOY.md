@@ -1,128 +1,97 @@
-# Nasazení Skrytokraje na server
+# Nasazení Skrytokraje na server 43 (handmade-production)
 
-Postup pro nasazení na tvůj VPS (Hetzner) přes git. Deploy je Docker sestava:
-**app (Next.js) + PostgreSQL/PostGIS + Caddy** (reverzní proxy s automatickým HTTPS).
+Skrytokraj běží jako Docker sestava **app (Next.js) + PostgreSQL/PostGIS**. HTTPS a
+subdoménu obstarává **systémový nginx na hostu** (stejně jako u projektu
+`almostthere`). App poslouchá jen na `127.0.0.1:3003` — ven vystavená není.
 
-Kód se na server dostává přes `git pull`, image se builduje přímo na serveru.
-
----
-
-## 0. Co je potřeba na serveru (jednorázově)
-
-Přihlas se na server přes SSH a ověř / doinstaluj:
-
-```bash
-# Docker + Docker Compose plugin
-docker --version
-docker compose version
-```
-
-Pokud Docker chybí, nainstaluj ho (Ubuntu/Debian):
-```bash
-curl -fsSL https://get.docker.com | sh
-```
-
-Otevři porty **80** a **443** (Caddy potřebuje oba kvůli HTTPS certifikátu). U
-Hetzner Cloud to nastav ve **Firewall** v konzoli, na serveru případně:
-```bash
-ufw allow 80
-ufw allow 443
-ufw allow OpenSSH   # ať se neodřízneš od SSH
-```
+Kód se na server dostává přes git. Server IP: `46.224.46.43`. Projekty jsou v `/opt`.
 
 ---
 
-## 1. Doména a DNS (uděláme spolu)
-
-Pro HTTPS potřebuješ doménu. Kroky:
-
-1. **Zaregistruj doménu** — např. `skrytokraj.cz` u českého registrátora (Wedos,
-   Forpsi), nebo levnější `.xyz`/`.eu` kdekoli. Stačí základní doména.
-2. **Nasměruj ji na server** — v DNS registrátora přidej **A záznam**:
-   - jméno: `@`  →  hodnota: **IPv4 adresa tvého serveru**
-   - (volitelně jméno `www` → stejná IP)
-3. Chvíli počkej, než se DNS rozšíří (typicky minuty až hodiny). Ověř:
-   ```bash
-   nslookup skrytokraj.cz
-   ```
-   Musí vracet IP tvého serveru.
-
-> **Tip — test bez domény:** než doména naběhne, můžeš appku vyzkoušet i přes IP.
-> V `.env` (krok 3) dočasně nastav `DOMAIN="<IP-serveru>"` — Caddy pak pojede na
-> `http://<IP>` bez HTTPS. Až bude doména hotová, vrať `DOMAIN` na doménu a znovu
-> `docker compose -f compose.prod.yml up -d`.
+## Bezpečnostní princip (ať se neopakuje chyba z minula)
+- App je navázaná na **`127.0.0.1:3003`** (localhost), NE na `0.0.0.0`.
+- **Do ufw port 3003 NEpřidávej.** Otevřené ven zůstávají jen **80, 443** (nginx)
+  a **SSH**.
+- Databáze nemá v compose žádný `ports:` — je jen na interní Docker síti, z hostu
+  ani zvenčí ji nevidíš.
 
 ---
 
-## 2. Stažení kódu na server
+## 1. Subdoména a DNS
+1. Vyber subdoménu, např. `skrytokraj.tvojedomena.cz` (doména může mít hlavní web
+   klidně na jiném serveru — subdoména je nezávislý DNS záznam).
+2. U registrátora/DNS přidej **A záznam**: `skrytokraj` → **46.224.46.43**.
+3. Ověř (počkej na rozšíření DNS): `nslookup skrytokraj.tvojedomena.cz` → 46.224.46.43.
 
+> Skrytokraj má přihlašování a hesla → jedeme rovnou přes doménu + HTTPS
+> (variantu „přes IP bez HTTPS" jako u almostthere demo tu vědomě NEpoužíváme).
+
+---
+
+## 2. Naklonování kódu (poprvé)
 ```bash
+cd /opt
 git clone https://github.com/daasadr/skrytokraj.git
 cd skrytokraj
 ```
-
-(Při dalších nasazeních už jen `git pull` — viz krok 6.)
+(Při dalších aktualizacích už jen `git pull` — viz sekce 6.)
 
 ---
 
-## 3. Konfigurace (soubor .env na serveru)
-
+## 3. Konfigurace (.env na serveru)
 ```bash
 cp .env.production.example .env
 nano .env
 ```
-
 Vyplň (soubor `.env` se **necommituje**):
-- `DOMAIN` — tvoje doména (nebo dočasně IP serveru)
-- `POSTGRES_PASSWORD` — silné heslo, vygeneruj: `openssl rand -base64 24`
-- `AUTH_SECRET` — vygeneruj: `openssl rand -base64 32`
-- `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` — přihlašovací údaje prvního admina
-- `NEXT_PUBLIC_MAPTILER_KEY` — nech prázdné (mapa pojede na OpenFreeMap), nebo
-  doplň klíč z MapTiler pro hezčí outdoor styl
+- `DOMAIN` = `skrytokraj.tvojedomena.cz`
+- `APP_PORT` = `3003`
+- `POSTGRES_PASSWORD` = `openssl rand -base64 24`
+- `AUTH_SECRET` = `openssl rand -base64 32`
+- `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` = přihlášení prvního admina (vyber si)
+- `NEXT_PUBLIC_MAPTILER_KEY` = nech prázdné (OpenFreeMap), nebo doplň klíč z MapTiler
 
 ---
 
-## 4. První spuštění
-
+## 4. Spuštění appky (Docker)
 ```bash
 docker compose -f compose.prod.yml up -d --build
 ```
-
-Co se stane: postaví se image, nastartuje databáze, aplikují se migrace (vytvoří
-tabulky), naseeduje se admin + ukázkové body, spustí se app a Caddy vyřídí HTTPS.
-
-Sleduj průběh:
+Postaví image, nastartuje DB, aplikuje migrace, naseeduje admina + ukázkové body,
+spustí app na `127.0.0.1:3003`. Sleduj průběh:
 ```bash
 docker compose -f compose.prod.yml logs -f app
-docker compose -f compose.prod.yml logs -f caddy
+```
+Rychlé ověření, že app běží (na serveru):
+```bash
+curl -I http://127.0.0.1:3003        # očekávej HTTP 200/307
 ```
 
-Pak otevři `https://tvoje-domena` — měl by naběhnout Skrytokraj. Přihlas se údaji
-admina z `.env`.
+---
 
-> **Změň si heslo admina** — seed vytvoří admina s heslem z `.env`. Heslo v `.env`
-> pak zůstává jen jako „obnovovací"; opětovné spuštění seedu heslo existujícího
-> admina nepřepisuje.
+## 5. nginx subdoména + HTTPS
+```bash
+# uprav subdoménu v souboru (2×), port 3003 už sedí
+sudo cp deploy/nginx.skrytokraj.conf.example /etc/nginx/sites-available/skrytokraj
+sudo nano /etc/nginx/sites-available/skrytokraj      # nahraď skrytokraj.tvojedomena.cz
+sudo ln -s /etc/nginx/sites-available/skrytokraj /etc/nginx/sites-enabled/skrytokraj
+sudo nginx -t && sudo systemctl reload nginx
+
+# certifikát Let's Encrypt (certbot je na serveru už z předchozích projektů)
+sudo certbot --nginx -d skrytokraj.tvojedomena.cz
+```
+Certbot sám doplní `listen 443` + certifikát a přesměruje HTTP→HTTPS. Pak otevři
+`https://skrytokraj.tvojedomena.cz`, přihlas se jako admin a jsi v Mapě Skrytokraje.
+
+> **Změň si heslo** admina po prvním přihlášení není zatím v UI — heslo z `.env`
+> je platné; opětovný seed ho nepřepisuje. (Reset hesla doděláme, až bude potřeba.)
 
 ---
 
-## 5. MapTiler klíč (kdykoli později)
-
-1. Zaregistruj se na https://cloud.maptiler.com/ (projde i se seznam.cz e-mailem).
-2. Zkopíruj svůj **API key**, v nastavení klíče přidej svou doménu do „Allowed origins".
-3. Na serveru do `.env`: `NEXT_PUBLIC_MAPTILER_KEY="tvuj-klic"`
-4. **Rebuild** (klíč se zapéká při buildu):
-   ```bash
-   docker compose -f compose.prod.yml up -d --build
-   ```
-
----
-
-## 6. Aktualizace (nová verze kódu)
-
+## 6. Aktualizace (nová verze)
 Na svém počítači commitni a pushni na GitHub. Pak na serveru:
 ```bash
-cd skrytokraj
+cd /opt/skrytokraj
 git pull
 docker compose -f compose.prod.yml up -d --build
 ```
@@ -130,30 +99,33 @@ Migrace se aplikují automaticky při startu.
 
 ---
 
-## 7. Užitečné příkazy
+## 7. MapTiler klíč (kdykoli později)
+1. Registrace na https://cloud.maptiler.com/ (projde i se seznam.cz).
+2. V nastavení klíče přidej subdoménu do „Allowed origins".
+3. Do `.env`: `NEXT_PUBLIC_MAPTILER_KEY="..."` a **rebuild** (klíč se zapéká při buildu):
+   ```bash
+   docker compose -f compose.prod.yml up -d --build
+   ```
 
+---
+
+## 8. Užitečné příkazy
 ```bash
-# stav kontejnerů
-docker compose -f compose.prod.yml ps
-# logy
-docker compose -f compose.prod.yml logs -f app
-# restart jen app
-docker compose -f compose.prod.yml restart app
-# zastavit vše
-docker compose -f compose.prod.yml down
-# záloha databáze
+docker compose -f compose.prod.yml ps                 # stav
+docker compose -f compose.prod.yml logs -f app        # logy app
+docker compose -f compose.prod.yml restart app        # restart app
+docker compose -f compose.prod.yml down               # zastavit vše
+# záloha DB:
 docker compose -f compose.prod.yml exec db pg_dump -U skrytokraj skrytokraj > zaloha.sql
 ```
 
 ---
 
-## 8. Řešení potíží
-
-- **HTTPS certifikát nenaběhl** → zkontroluj, že DNS A záznam míří na server a že
-  jsou otevřené porty 80 a 443. Podívej se do `logs -f caddy`.
-- **App se restartuje / chyba DB** → `logs -f app`. Migrace čekají na DB až 10×3 s;
-  když DB nenaběhne, zkontroluj `logs -f db` a heslo v `.env`.
-- **Mapa je prázdná/šedá** → bez MapTiler klíče jede OpenFreeMap; ověř připojení
-  serveru k internetu. S klíčem zkontroluj „Allowed origins" v MapTiler.
-- **Zapomenuté heslo admina** → dočasně nastav v `.env` nové `SEED_ADMIN_PASSWORD`
-  a smaž admina z DB, nebo mi napiš — připravíme skript na reset hesla.
+## 9. Řešení potíží
+- **502 Bad Gateway** → app neběží nebo špatný port. Ověř `curl -I http://127.0.0.1:3003`
+  a `docker compose -f compose.prod.yml logs -f app`.
+- **Certbot selhal** → DNS A záznam ještě nemíří na 46.224.46.43, nebo port 80 blokuje
+  firewall. Ověř `nslookup` a `sudo ufw status`.
+- **App se restartuje / chyba DB** → `logs -f app` (migrace čekají na DB 10×3 s),
+  zkontroluj heslo v `.env`.
+- **Mapa šedá** → bez MapTiler klíče jede OpenFreeMap; ověř konektivitu serveru.
