@@ -1,4 +1,8 @@
-# Skrytokraj — produkční sestava (server / Hetzner VPS).
+# Skrytokraj — produkční sestava (server 43 / handmade-production).
+# Reverzní proxy (HTTPS) běží na hostu (systémový nginx/caddy) — stejně jako
+# u projektu "almostthere". Tato sestava proto NEspouští vlastní proxy; app jen
+# vystaví na lokální port, na který se napojí hostitelská proxy pro subdoménu.
+#
 # Použití na serveru:
 #   git pull
 #   docker compose -f compose.prod.yml up -d --build
@@ -39,37 +43,20 @@ services:
       DATABASE_URL: "postgresql://${POSTGRES_USER:-skrytokraj}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-skrytokraj}?schema=public"
       AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET musí být v .env}
       AUTH_TRUST_HOST: "true"
-      AUTH_URL: "https://${DOMAIN:?DOMAIN musí být v .env}"
+      AUTH_URL: "https://${DOMAIN:?DOMAIN (subdoména) musí být v .env}"
       SEED_ON_START: ${SEED_ON_START:-true}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@skrytokraj.cz}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-skrytokraj-admin}
       SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-Kronikář (admin)}
+    ports:
+      # Jen localhost — na tento port se napojí hostitelská proxy (skrytokraj.<doména>).
+      # 3000/3001/3002 jsou obsazené jinými projekty, proto 3003.
+      - "127.0.0.1:${APP_PORT:-3003}:3000"
     networks:
       - internal
-      - web
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      DOMAIN: ${DOMAIN:?DOMAIN musí být v .env}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - app
-    networks:
-      - web
 
 volumes:
   pgdata:
-  caddy_data:
-  caddy_config:
 
 networks:
   internal:
-  web:
