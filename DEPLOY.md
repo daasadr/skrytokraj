@@ -1,10 +1,11 @@
-# Nasazení Skrytokraje na server 43 (handmade-production)
+# Nasazení Skrytokraje na server
 
 Skrytokraj běží jako Docker sestava **app (Next.js) + PostgreSQL/PostGIS**. HTTPS a
-subdoménu obstarává **systémový nginx na hostu** (stejně jako u projektu
-`almostthere`). App poslouchá jen na `127.0.0.1:3003` — ven vystavená není.
+subdoménu obstarává **systémový nginx na hostu** (reverse proxy). App poslouchá jen
+na `127.0.0.1:3003` — ven vystavená není. Kód se na server dostává přes git.
 
-Kód se na server dostává přes git. Server IP: `46.224.46.43`. Projekty jsou v `/opt`.
+> Konkrétní hodnoty pro náš server (IP, subdoména, sousední projekty) drž mimo tento
+> veřejný repozitář — máš je v `.env` na serveru a ve svých poznámkách.
 
 ---
 
@@ -18,23 +19,24 @@ Kód se na server dostává přes git. Server IP: `46.224.46.43`. Projekty jsou 
 ---
 
 ## 1. Subdoména a DNS
-1. Vyber subdoménu, např. `skrytokraj.tvojedomena.cz` (doména může mít hlavní web
-   klidně na jiném serveru — subdoména je nezávislý DNS záznam).
-2. U registrátora/DNS přidej **A záznam**: `skrytokraj` → **46.224.46.43**.
-3. Ověř (počkej na rozšíření DNS): `nslookup skrytokraj.tvojedomena.cz` → 46.224.46.43.
+1. Vyber subdoménu (např. `skrytokraj.tvojedomena.eu`). Doména může mít hlavní web
+   klidně na jiném serveru — subdoména je nezávislý DNS záznam.
+2. U registrátora/DNS přidej **A záznam**: `skrytokraj` → **IP tvého serveru**.
+3. Ověř (počkej na rozšíření DNS): `nslookup skrytokraj.tvojedomena.eu`.
 
 > Skrytokraj má přihlašování a hesla → jedeme rovnou přes doménu + HTTPS
-> (variantu „přes IP bez HTTPS" jako u almostthere demo tu vědomě NEpoužíváme).
+> (variantu „přes IP bez HTTPS" tu vědomě NEpoužíváme, hesla by létala čitelně).
 
 ---
 
-## 2. Naklonování kódu (poprvé)
+## 2. Kód na serveru
+Poprvé (do adresáře, kde máš projekty, např. `/opt`):
 ```bash
 cd /opt
 git clone https://github.com/daasadr/skrytokraj.git
 cd skrytokraj
 ```
-(Při dalších aktualizacích už jen `git pull` — viz sekce 6.)
+Pokud tam adresář už je z dřívějška, jen aktualizuj: `cd /opt/skrytokraj && git pull`.
 
 ---
 
@@ -44,8 +46,8 @@ cp .env.production.example .env
 nano .env
 ```
 Vyplň (soubor `.env` se **necommituje**):
-- `DOMAIN` = `skrytokraj.tvojedomena.cz`
-- `APP_PORT` = `3003`
+- `DOMAIN` = tvoje subdoména (bez `https://`)
+- `APP_PORT` = `3003` (nebo jiný volný localhost port)
 - `POSTGRES_PASSWORD` = `openssl rand -base64 24`
 - `AUTH_SECRET` = `openssl rand -base64 32`
 - `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` = přihlášení prvního admina (vyber si)
@@ -62,29 +64,28 @@ spustí app na `127.0.0.1:3003`. Sleduj průběh:
 ```bash
 docker compose -f compose.prod.yml logs -f app
 ```
-Rychlé ověření, že app běží (na serveru):
+Ověření, že app běží (na serveru):
 ```bash
-curl -I http://127.0.0.1:3003        # očekávej HTTP 200/307
+docker ps --format 'table {{.Names}}\t{{.Ports}}'
+curl -I http://127.0.0.1:3003        # očekávej HTTP 200 nebo 307
 ```
 
 ---
 
 ## 5. nginx subdoména + HTTPS
+> Pokud reverse proxy / HTTPS spravuje jiné (serverové) okno nebo osoba, tento krok
+> přeskoč — jen jim nahlas port `127.0.0.1:3003` a subdoménu.
+
+Jinak ručně na hostu:
 ```bash
-# uprav subdoménu v souboru (2×), port 3003 už sedí
 sudo cp deploy/nginx.skrytokraj.conf.example /etc/nginx/sites-available/skrytokraj
-sudo nano /etc/nginx/sites-available/skrytokraj      # nahraď skrytokraj.tvojedomena.cz
+sudo nano /etc/nginx/sites-available/skrytokraj      # nahraď subdoménu (2×)
 sudo ln -s /etc/nginx/sites-available/skrytokraj /etc/nginx/sites-enabled/skrytokraj
 sudo nginx -t && sudo systemctl reload nginx
-
-# certifikát Let's Encrypt (certbot je na serveru už z předchozích projektů)
-sudo certbot --nginx -d skrytokraj.tvojedomena.cz
+sudo certbot --nginx -d skrytokraj.tvojedomena.eu
 ```
 Certbot sám doplní `listen 443` + certifikát a přesměruje HTTP→HTTPS. Pak otevři
-`https://skrytokraj.tvojedomena.cz`, přihlas se jako admin a jsi v Mapě Skrytokraje.
-
-> **Změň si heslo** admina po prvním přihlášení není zatím v UI — heslo z `.env`
-> je platné; opětovný seed ho nepřepisuje. (Reset hesla doděláme, až bude potřeba.)
+`https://skrytokraj.tvojedomena.eu`, přihlas se jako admin a jsi v Mapě Skrytokraje.
 
 ---
 
@@ -124,7 +125,7 @@ docker compose -f compose.prod.yml exec db pg_dump -U skrytokraj skrytokraj > za
 ## 9. Řešení potíží
 - **502 Bad Gateway** → app neběží nebo špatný port. Ověř `curl -I http://127.0.0.1:3003`
   a `docker compose -f compose.prod.yml logs -f app`.
-- **Certbot selhal** → DNS A záznam ještě nemíří na 46.224.46.43, nebo port 80 blokuje
+- **Certbot selhal** → DNS A záznam ještě nemíří na server, nebo port 80 blokuje
   firewall. Ověř `nslookup` a `sudo ufw status`.
 - **App se restartuje / chyba DB** → `logs -f app` (migrace čekají na DB 10×3 s),
   zkontroluj heslo v `.env`.

@@ -1,121 +1,201 @@
-# Skrytokraj — přehled projektu
+# Skrytokraj — kompletní přehled projektu
 
-## O projektu
-Skrytokraj je lokální hra typu geocaching s příběhovým a fantasy přesahem, zasazená
-do okolí Petřvaldu na Novojičínsku (řeka Lubina, Poodří; obce Trnávka, Skotnice,
-Stará Ves nad Ondřejnicí, Petřvaldík a další). Hráči v krajině hledají fyzická i AR
+> Živý dokument. Aktualizuje se po každé větší dokončené části. Slouží nám oběma jako
+> jedno místo, kam se kdykoli podíváme na stav, technická rozhodnutí a plány.
+> Poslední aktualizace: **2026-08-02**.
+
+---
+
+## 1. O projektu
+Skrytokraj je **lokální hra typu geocaching s příběhovým a fantasy přesahem**, zasazená
+do okolí Petřvaldu na Novojičínsku (řeka Lubina, Poodří; obce Trnávka, Skotnice, Stará
+Ves nad Ondřejnicí, Petřvaldík a další). Hráči v reálné krajině hledají fyzická i AR
 místa, plní úkoly, hledají poklady a schránky se vzkazy a postupně odhalují mytologii
-kraje (Kronika skrytého kraje). Web je stavěný jako PWA (funguje na mobilu, jde přidat
-na plochu telefonu). Tato první fáze staví kostru webu a jednu klíčovou část —
-**Mapu Skrytokraje**.
+kraje (**Kronika skrytého kraje**).
 
-## Tech stack
-- **Next.js 16** (App Router) + **TypeScript**, **React 19.2**. Pozor: Next 16 má
-  proti 14/15 breaking changes (async `params`/`cookies`/`headers`, `middleware`→`proxy`,
-  Turbopack default) — zohledněno v kódu.
-- **Tailwind CSS v4** — konfigurace v CSS (`@import "tailwindcss"` + `@theme`).
-- **PostgreSQL + PostGIS** (docker image `postgis/postgis:16-3.4`).
-- **Prisma 7** jako ORM (nový generátor `prisma-client`, driver adapter `@prisma/adapter-pg`).
-- **Auth.js (NextAuth v5)** — email/heslo (Credentials), JWT session, role `admin`|`user`.
-- **MapLibre GL** přes **react-map-gl v8** (import z `react-map-gl/maplibre`);
-  podklad MapTiler (klíč) nebo OpenFreeMap (bez klíče).
-- **Docker Compose** pro lokální vývoj (PostGIS + volitelně app).
-- PWA přes nativní `app/manifest.ts` + service worker (`public/sw.js`).
+Web je stavěný jako **PWA** — funguje na mobilu a jde přidat na plochu telefonu. Kraj
+se bude rozšiřovat po vesnicích; každá může dostat vlastní příběh napojený na skutečné
+místo, pověst nebo historickou událost.
 
-## Aktuální stav
-**Fáze 1 je funkčně hotová.** Kostra webu stojí, Mapa Skrytokraje funguje (mapa,
-geolokace, body podle typu, admin CRUD, uživatelské schránky s viditelností).
-Projekt prošel `tsc --noEmit` i `next build` bez chyb a dev server běžně nastartuje
-(úvod/přihlášení/kronika se vykreslují, `/mapa` chrání proxy, API vrací 401 bez
-přihlášení). **Zbývá jen na straně autorky:** spustit databázi (Docker) + migraci +
-seed a doplnit Mapbox token — viz „Jak spustit" v README.
+Zdroje příběhu: `Kronika_skryteho_kraje.md`. Zadání 1. fáze: `ZADANI_SKRYTOKRAJ_faze1.md`.
 
-## Hotovo
-- [2026-07-24] Scaffold Next.js 16 + TS + Tailwind v4 (App Router).
-- [2026-07-24] Prisma 7: schéma `User` + `MapPoint`, migrace vč. PostGIS extension,
-  klient s pg adaptérem, seed skript (admin + ukázkové body z Kroniky).
-- [2026-07-24] Auth.js: přihlášení, registrace, odhlášení, role, ochrana rout (`proxy.ts`).
-- [2026-07-24] Kostra UI: layout, hlavička/menu podle přihlášení, úvod, placeholder
-  sekce Kronika, PWA manifest + ikony + service worker.
-- [2026-07-24] Mapa Skrytokraje: mapa (Mapbox), živá geolokace, body podle typu
-  (ikona/barva), detail v popupu, admin zakládá/edituje/maže úkoly/poklady/příběhová/
-  AR místa, uživatel zakládá schránky se vzkazem (veřejné / konkrétnímu uživateli).
-- [2026-07-24] REST API `/api/points`, `/api/points/[id]`, `/api/users` s oprávněními.
-- [2026-07-24] `docker-compose.yml`, `Dockerfile`, `.env.example`, `.env`, README.
-- [2026-07-24] Ověřeno: `tsc --noEmit` ✓, `next build` ✓, runtime smoke test ✓.
+## 2. Slovníček Kroniky (aby technika seděla s příběhem)
+- **Vrstvy** — svět má víc vrstev položených přes sebe; kdysi mezi nimi nebyly zdi.
+- **Propojení → Probuzení → Mlčení → Návrat** — kosmologie kraje (éry). Dnes je Návrat.
+- **Skulina** — místo, kde je vrstva nejtenčí (cíl hledání). Odtud i ikona/logo appky.
+- **Naslouchání** — schopnost všímat si; „mechanika" řešení úkolů (pozornost, ne síla).
+- **Kronikáři** — hráči, kteří zaznamenávají, co najdou. Role `user` = kronikář.
+- Příběhové linky: Skrytci z Hončovy hůrky, Páví strážci Petřvaldu, Švejťák (Stará Ves),
+  Paní mlh z Poodří, Harty (zaniklá vesnice), Hraniční strom v Trnávce.
 
-## Pracuje se na
-- (nic rozpracovaného) — fáze 1 uzavřena, čeká se na spuštění DB a Mapbox token.
+## 3. Architektura ve zkratce
+Jedna **Next.js 16** aplikace (App Router) obsluhuje **frontend, API i autentizaci**
+v jednom procesu (monolit, jeden port). Data drží **PostgreSQL + PostGIS** přes ORM
+**Prisma 7**. Mapu vykresluje **MapLibre** (v prohlížeči). V produkci vše běží v Dockeru
+za systémovým **nginx** (HTTPS). Zjednodušeně:
 
-## TODO / další kroky
-### Ke spuštění (autorka)
-- Nainstalovat **Docker Desktop** (na stroji zatím není), pak `docker compose up -d db`.
-- `npm run db:migrate` (nebo `prisma migrate deploy`) + `npm run db:seed`.
-- Doplnit **`NEXT_PUBLIC_MAPBOX_TOKEN`** do `.env` (public token `pk.…` z účtu Mapbox),
-  jinak se mapa nevykreslí (zobrazí se hláška).
+```
+Prohlížeč (PWA)
+   │  https
+   ▼
+nginx (host, TLS) ── reverse proxy ──►  Next.js app (Docker, 127.0.0.1:3003)
+                                            │  ├─ stránky (React Server Components)
+                                            │  ├─ /api/*  (route handlery)
+                                            │  └─ Auth.js (JWT session)
+                                            ▼
+                                    PostgreSQL + PostGIS (Docker, interní síť)
+```
 
-### Vylepšení fáze 1 (drobnosti)
-- Rastrové PWA ikony 192/512 px (maskable) + apple-touch-icon PNG — teď jen SVG placeholder.
-- Mobilní menu jako skládací (hamburger) místo vodorovného scrollu.
-- Možnost při editaci bodu i přesunout jeho polohu (teď edituje jen text/viditelnost).
+## 4. Tech stack a proč
+| Vrstva | Volba | Proč |
+| --- | --- | --- |
+| Framework | **Next.js 16** (App Router, TS), React 19 | jeden nástroj na frontend i API, SSR, PWA |
+| Styl | **Tailwind CSS v4** | rychlé, konzistentní UI; konfigurace v CSS |
+| Databáze | **PostgreSQL + PostGIS** | robustní; PostGIS připraven na prostorové dotazy |
+| ORM | **Prisma 7** | typované dotazy, migrace; nový generátor + pg adapter |
+| Auth | **Auth.js (NextAuth v5)** | email/heslo, JWT, role; bez cizích služeb |
+| Mapa | **MapLibre** (react-map-gl v8) | open-source; Mapbox odmítl registraci (viz §11) |
+| Podklad | **MapTiler** / **OpenFreeMap** | outdoor styl s klíčem; bez klíče zdarma fallback |
+| PWA | `app/manifest.ts` + `public/sw.js` | instalace na plochu telefonu |
+| Běh | **Docker + docker compose** | izolace, snadné nasazení, shoda s ostatními projekty |
 
-### Další fáze (mimo fázi 1)
-- Sekce Kronika/příběhy (obsah), chat mezi uživateli, reálný AR obsah.
-- Pokročilá administrace uživatelů.
-- Prostorové dotazy „body v okolí" přes PostGIS (viz rozhodnutí níže).
-- Ostrá deployment konfigurace (Hetzner VPS).
+## 5. Datový model
+Dvě tabulky (`prisma/schema.prisma`):
 
-## Rozhodnutí a poznámky
+**User** — `id`, `email` (unikátní), `name`, `passwordHash` (bcrypt), `role`
+(`admin` | `user`), `createdAt`.
 
-### Datový model: jedna tabulka `MapPoint` (ne oddělený `MessageBox`)
-Všechny typy bodů sdílí základ (souřadnice, název, popis, autor, viditelnost, čas);
-liší se jen `type` a tím, kdo je smí zakládat (řešeno v oprávněních API). Jedna tabulka
-s enumem `MapPointType` + `Visibility` (`public`/`private_user`) a nullable `recipientId`
-dává čistší kód a jednodušší dotaz „vrať vše viditelné pro uživatele X" než dvě tabulky.
-Kdyby schránky narostly o hodně vlastní logiky, lze je oddělit později.
+**MapPoint** — jeden bod na mapě, sdílený základ pro všechny typy:
+- `type`: `quest` | `treasure` | `story_location` | `ar_location` | `message_box`
+- `name`, `description`
+- `lat`, `lng` (Float; souřadnice WGS84)
+- `visibility`: `public` | `private_user`
+- `recipientId` (nullable) — u soukromé schránky příjemce
+- `createdById` — autor
+- `arContent` (nullable) — placeholder pro budoucí AR obsah
+- `isActive` — deaktivace bez mazání
+- `createdAt`, `updatedAt`
 
-### Souřadnice jako Float (lat/lng), PostGIS připraven na později
-Prisma nemá pořádnou nativní podporu PostGIS `geometry`. Ve fázi 1 mapa jen zobrazuje
-viditelné body — prostorové dotazy „v okolí" nepotřebujeme. Držíme `Float lat`/`Float lng`
-(jednoduché, plně typované). DB ale běží na `postgis/postgis` a migrace zapíná extension,
-takže později stačí doplnit `geometry(Point,4326)` + GIST index přes raw SQL a dotazovat
-přes `prisma.$queryRaw`. Vyhneme se tření Prisma × PostGIS teď a neztrácíme budoucnost.
+Proč jedna tabulka místo oddělené `MessageBox` — viz §12.
 
-### Prisma 7 — dvě nucené změny oproti starším verzím
-- Runtime už neobsahuje Rust engine → `PrismaClient` **vyžaduje driver adapter**
-  (`@prisma/adapter-pg`), viz `lib/prisma.ts`.
-- Connection URL **nepatří do `schema.prisma`**, ale do `prisma.config.ts` (Migrate);
-  runtime se připojuje přes adapter. Generátor je nový `prisma-client` (generuje TS
-  klienta do `generated/prisma`, proto je `postinstall: prisma generate`).
+## 6. Autentizace a role
+- Přihlášení **email + heslo** (Credentials), hesla hashovaná `bcrypt`.
+- **JWT session** — `id` a `role` neseme v tokenu i session (typy v
+  `types/next-auth.d.ts`).
+- **Role:**
+  - `admin` — zakládá/edituje/maže úkoly, poklady, příběhová a AR místa; smí upravovat
+    a mazat libovolný bod.
+  - `user` (kronikář) — zakládá schránky se vzkazem (veřejné, nebo jen konkrétnímu
+    uživateli); smí mazat/upravovat vlastní schránky.
+- **Ochrana rout:** `proxy.ts` (v Next 16 nástupce `middleware.ts`) přesměruje
+  nepřihlášené z `/mapa` na `/prihlaseni`.
+- Registrace je zatím **volná a veřejná** (nová role `user`) — otevřená otázka §13.
 
-### Next.js 16 — na co dát pozor
-`params`/`searchParams`/`cookies()`/`headers()` jsou async (nutné `await`);
-`middleware.ts` je přejmenován na **`proxy.ts`** (funkce `proxy`, jen Node runtime);
-Turbopack je default; `next lint` odstraněn.
+## 7. Mapa Skrytokraje (hlavní funkce)
+- **Živá poloha** hráče přes geolokaci prohlížeče (`GeolocateControl`).
+- **Body podle typu** — odlišené ikonou a barvou (viz `lib/mapPoints.ts`), po kliknutí
+  detail v popupu (název, popis, typ, autor).
+- **Viditelnost dotazu** — hráč vidí veřejné body, soukromé určené jemu a vlastní
+  (`lib/points.ts` → `getVisiblePoints`).
+- **Zakládání bodů:**
+  - kdokoli: „Přidat schránku se vzkazem" → umístění klepnutím do mapy nebo dle polohy →
+    text + viditelnost (veřejně / konkrétnímu uživateli ze seznamu)
+  - admin: „Přidat místo" s výběrem typu (úkol/poklad/příběhové/AR)
+- **Podklad** se volí automaticky (`lib/mapStyle.ts`): MapTiler outdoor když je klíč,
+  jinak OpenFreeMap. Mapa se načítá dynamicky bez SSR (MapLibre potřebuje `window`).
 
-### Auth: JWT session bez Prisma adaptéru
-Credentials provider + JWT strategie, roli `role` a `id` neseme v tokenu i session
-(typy rozšířeny v `types/next-auth.d.ts`). Prisma adapter (DB session/OAuth) zatím
-netřeba. Hesla přes `bcryptjs`.
+## 8. Přehled API (route handlery)
+- `GET /api/points` — body viditelné pro přihlášeného uživatele
+- `POST /api/points` — založení bodu (kontrola oprávnění dle typu)
+- `PATCH /api/points/[id]` — úprava (admin cokoliv; autor vlastní schránku)
+- `DELETE /api/points/[id]` — smazání (stejná pravidla)
+- `GET /api/users` — seznam uživatelů (id + jméno) pro výběr příjemce
+- `/api/auth/[...nextauth]` — Auth.js (přihlášení, odhlášení, session)
 
-### Mapa: MapLibre místo Mapboxu (2026-07-25)
-Mapbox **odmítá registraci s osobním e-mailem** (chce firemní/doménový), autorka se
-tedy nemohla zaregistrovat. Přešli jsme na **MapLibre** (open-source, `react-map-gl`
-ho podporuje přes `react-map-gl/maplibre`). Podklad: **MapTiler outdoor** když je
-`NEXT_PUBLIC_MAPTILER_KEY` (registrace projde i se seznam.cz), jinak automaticky
-**OpenFreeMap** (bez klíče, bez registrace) — viz `lib/mapStyle.ts`. Mapa tak funguje
-hned. Komponenta se načítá dynamicky bez SSR (`ssr:false`), MapLibre potřebuje `window`.
+## 9. Adresářová struktura (výběr)
+```
+app/
+  page.tsx              úvod
+  prihlaseni/ registrace/ kronika/   přihlášení, registrace, placeholder Kronika
+  mapa/                 Mapa Skrytokraje (chráněná)
+  api/points/ api/users/            REST API
+  manifest.ts           PWA manifest
+auth.ts  proxy.ts       Auth.js + ochrana rout
+components/             SiteHeader, auth formuláře, map/ (MapView, PointForm, …)
+lib/                    prisma, points, validation, mapPoints, mapStyle, actions/
+prisma/                 schema, migrations, seed.ts
+deploy/                 nginx.skrytokraj.conf.example
+Dockerfile  docker-entrypoint.sh  compose.prod.yml  Caddyfile
+```
 
-### Nasazení: git → server → Docker (2026-07-25)
-Kód jde na GitHub (`daasadr/skrytokraj`) a na server (Hetzner VPS) se dostává přes
-`git pull`. Produkční sestava `compose.prod.yml`: app + PostGIS + **Caddy** (auto
-HTTPS). Migrace a seed běží při startu (`docker-entrypoint.sh`). NEBUDE se používat
-lokální databáze — vše běží na serveru. Postup je v `DEPLOY.md`.
+## 10. Proměnné prostředí
+| Proměnná | K čemu | Pozn. |
+| --- | --- | --- |
+| `DATABASE_URL` | připojení k DB | v produkci sestaví compose |
+| `AUTH_SECRET` | šifrování session | `openssl rand -base64 32` |
+| `AUTH_URL` | veřejná URL pro Auth.js | `https://<subdoména>` |
+| `AUTH_TRUST_HOST` | důvěra proxy | `true` |
+| `NEXT_PUBLIC_MAPTILER_KEY` | podklad MapTiler | **nepovinné**; bez něj OpenFreeMap |
+| `POSTGRES_*` | jméno/heslo/db | jen produkční compose |
+| `SEED_ADMIN_*` | první admin | naseeduje se při startu |
 
-### Otevřené otázky pro autorku
-- **Registrace:** zatím **volná veřejná** registrace (role `user`). Má být volná, nebo
-  jen na pozvání/schválení adminem?
-- **Mapa:** vyřešeno — MapLibre + OpenFreeMap (funguje bez klíče). MapTiler klíč je
-  jen volitelné vylepšení stylu.
-- **Výchozí střed mapy:** nastaven na Petřvald (`lib/mapPoints.ts` → `DEFAULT_MAP_CENTER`).
-- **Ukázkové body:** souřadnice v seedu jsou přibližné — dolaď je přímo na mapě.
+Vzory: `.env.example` (lokál), `.env.production.example` (server). `.env` se necommituje.
+
+## 11. Nasazení
+- **Tok:** kód → GitHub (`daasadr/skrytokraj`) → server přes `git pull`.
+- **Produkce:** `compose.prod.yml` staví app + PostGIS. App poslouchá **jen na
+  localhost** (`127.0.0.1:<port>`), databáze je **jen na interní Docker síti**
+  (nikam se nepublikuje). HTTPS a subdoménu řeší **systémový nginx na hostu** (mimo
+  tento repozitář). Migrace a seed běží při startu (`docker-entrypoint.sh`).
+- **Bezpečnost:** app navázaná na `127.0.0.1`, ven otevřené jen 80/443 (nginx) a SSH;
+  port appky se do ufw NEpřidává.
+- **Lokální databáze se nepoužívá** — vývoj i běh míří na server.
+- Podrobný postup: `DEPLOY.md`. (Konkrétní IP/subdoménu/sousední projekty držíme mimo
+  veřejný repozitář.)
+
+## 12. Technická rozhodnutí (a proč)
+- **Jedna tabulka `MapPoint`** místo oddělené `MessageBox` — společný základ, jednodušší
+  dotaz na viditelnost; oddělit lze později, kdyby schránky nabraly vlastní logiku.
+- **Souřadnice jako Float** (ne PostGIS geometry) — Prisma nemá dobrou nativní podporu
+  geometry a ve fázi 1 nepotřebujeme prostorové dotazy. PostGIS je ale zapnutý; „body
+  v okolí" se doplní později přes raw SQL (`geometry(Point,4326)` + GIST index).
+- **MapLibre místo Mapboxu** (2026-07-25) — Mapbox odmítá registraci s osobním e-mailem.
+  MapLibre je open-source dvojče; podklad MapTiler (klíč projde i se seznam.cz) nebo
+  OpenFreeMap (bez klíče). Mapa funguje hned.
+- **JWT session bez Prisma adaptéru** — pro email/heslo s rolemi stačí; méně vazeb.
+- **Prisma 7 nucené změny** — runtime bez Rust enginu → nutný driver adapter
+  (`@prisma/adapter-pg`); connection URL v `prisma.config.ts`, ne ve schématu; nový
+  generátor `prisma-client` (generuje TS klienta do `generated/`, proto `postinstall`).
+- **Next.js 16 novinky** — `params`/`searchParams`/`cookies()`/`headers()` jsou async;
+  `middleware.ts` → `proxy.ts`; Turbopack default; `next lint` odstraněn.
+- **Nasazení bez Caddyho v compose** — na cílovém serveru už drží 80/443 systémový
+  nginx; vlastní proxy by kolidovala. App se proto jen vystaví na localhost port.
+
+## 13. Otevřené otázky pro autorku
+- **Registrace:** volná veřejná, nebo jen na pozvání/schválení adminem? (Zatím volná.)
+- **Reset/změna hesla admina** v UI zatím není — doděláme, až bude potřeba.
+- **MapTiler klíč** — chceš hezčí outdoor styl? Pak si založit klíč a vložit do `.env`
+  (jinak OpenFreeMap stačí).
+
+## 14. Stav
+
+### Hotovo
+- Kostra webu (Next.js 16, TS, Tailwind v4), PWA (manifest, ikony, service worker).
+- Auth.js: přihlášení, registrace, odhlášení, role, ochrana rout.
+- Prisma 7 + PostgreSQL/PostGIS: schéma, migrace (vč. PostGIS), seed (admin + body).
+- Mapa Skrytokraje: MapLibre, geolokace, body dle typu, detail, admin CRUD,
+  uživatelské schránky s viditelností public/private.
+- REST API pro body a uživatele s kontrolou oprávnění.
+- Produkční nasazení: Dockerfile, `compose.prod.yml`, entrypoint (migrace+seed),
+  `deploy/nginx.*` vzor, `DEPLOY.md`. Kód na GitHubu.
+- Ověřeno: `tsc --noEmit` ✓, `next build` ✓, runtime smoke test ✓.
+
+### Pracuje se na
+- První ostré nasazení na server (subdoména + nginx + HTTPS) — probíhá.
+
+### Plán / další fáze
+- **Fáze 1 — dokončení:** rastrové PWA ikony (192/512, maskable) + apple-touch-icon;
+  skládací mobilní menu; možnost přesunout bod při editaci.
+- **Další fáze:** sekce Kronika/příběhy (obsah), chat mezi uživateli, reálný AR obsah,
+  pokročilá administrace uživatelů, prostorové dotazy „body v okolí" (PostGIS),
+  reset hesla, e-mailové notifikace.
