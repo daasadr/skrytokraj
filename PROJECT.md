@@ -170,6 +170,9 @@ Vzory: `.env.example` (lokál), `.env.production.example` (server). `.env` se ne
   `middleware.ts` → `proxy.ts`; Turbopack default; `next lint` odstraněn.
 - **Nasazení bez Caddyho v compose** — na cílovém serveru už drží 80/443 systémový
   nginx; vlastní proxy by kolidovala. App se proto jen vystaví na localhost port.
+- **maplibre-gl přišpendlen na v5** (2026-08-04) — react-map-gl v8 má peer
+  `maplibre-gl >=4.0.0`, ale s úplně novou **v6 se rozbíjí** (chyba `reading 'center'`
+  v kameře, padající worker → šedá mapa). Pin `^5.24.0`. Pozor na to při updatech.
 
 ## 13. Otevřené otázky pro autorku
 - **Registrace:** volná veřejná, nebo jen na pozvání/schválení adminem? (Zatím volná.)
@@ -190,8 +193,9 @@ Vzory: `.env.example` (lokál), `.env.production.example` (server). `.env` se ne
   `deploy/nginx.*` vzor, `DEPLOY.md`. Kód na GitHubu.
 - Ověřeno: `tsc --noEmit` ✓, `next build` ✓, runtime smoke test ✓.
 
-### Pracuje se na
-- První ostré nasazení na server (subdoména + nginx + HTTPS) — probíhá.
+### Aktuální stav
+- **Nasazeno a funkční na produkční subdoméně** (git → server → Docker, za hostitelským
+  nginx s HTTPS). Přihlášení, mapa i podklad (MapTiler) běží. Fáze 1 je živá. 🎉
 
 ### Plán / další fáze
 - **Fáze 1 — dokončení:** rastrové PWA ikony (192/512, maskable) + apple-touch-icon;
