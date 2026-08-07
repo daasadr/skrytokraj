@@ -194,6 +194,9 @@ Vzory: `.env.example` (lokál), `.env.production.example` (server). `.env` se ne
 - Dokončení fáze 1: rastrové PWA ikony (192/512, maskable, apple-touch), skládací
   mobilní menu (hamburger), přesun bodu tažením markeru, vycentrování mapy na polohu
   hráče při načtení (podpora více oblastí).
+- Admin sekce `/admin`: správa uživatelů (změna rolí), správa **Oblastí (krajů)** —
+  zakládání/editace/mazání s úvodem příběhu, středem, stylem a zveřejněním.
+- Model **Region** + `regionId` na bodu (migrace `00000000000001_regions`).
 - Ověřeno: `tsc --noEmit` ✓, `next build` ✓, runtime smoke test ✓.
 
 ### Aktuální stav

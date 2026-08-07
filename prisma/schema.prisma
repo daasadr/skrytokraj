@@ -51,6 +51,8 @@ model User {
   createdPoints  MapPoint[] @relation("CreatedBy")
   // soukromé schránky určené tomuto uživateli
   receivedPoints MapPoint[] @relation("Recipient")
+  // oblasti (kraje), které uživatel založil
+  createdRegions Region[]   @relation("RegionCreatedBy")
 
   @@map("users")
 }
@@ -82,6 +84,10 @@ model MapPoint {
   // Placeholder pro budoucí AR obsah (identifikátor/odkaz na model)
   arContent String?
 
+  // Oblast (kraj), do které bod patří — nepovinné (bod může být "globální").
+  regionId String?
+  region   Region? @relation(fields: [regionId], references: [id], onDelete: SetNull)
+
   isActive  Boolean  @default(true) // deaktivace bez mazání
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -89,5 +95,34 @@ model MapPoint {
   @@index([type])
   @@index([visibility])
   @@index([recipientId])
+  @@index([regionId])
   @@map("map_points")
+}
+
+// --- Oblast (kraj) ----------------------------------------------------------
+// Univerzální šablona pro jeden kraj Skrytokraje (Petřvald, Průhonice, …).
+// Přidává se průběžně, jak vznikají v realitě. Viz PROJECT.md.
+model Region {
+  id          String  @id @default(cuid())
+  slug        String  @unique // pro adresu, např. "petrvald"
+  name        String
+  description String? @db.Text // úvod příběhu oblasti (kapitola kroniky)
+
+  // Kam se mapa vycentruje při vstupu do kapitoly
+  centerLat   Float
+  centerLng   Float
+  defaultZoom Float  @default(13)
+
+  color       String? // akcentní barva oblasti (hex)
+  isPublished Boolean @default(false) // ať jde kraj připravit skrytě
+
+  createdById String
+  createdBy   User   @relation("RegionCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+
+  points MapPoint[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("regions")
 }

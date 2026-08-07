@@ -25,6 +25,12 @@ export default async function AdminLayout({
             Přehled
           </Link>
           <Link
+            href="/admin/oblasti"
+            className="rounded-md px-3 py-1.5 text-kraj-muted hover:bg-kraj-panel hover:text-kraj-fg"
+          >
+            Oblasti
+          </Link>
+          <Link
             href="/admin/uzivatele"
             className="rounded-md px-3 py-1.5 text-kraj-muted hover:bg-kraj-panel hover:text-kraj-fg"
           >

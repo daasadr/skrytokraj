@@ -5,21 +5,28 @@ import { prisma } from "@/lib/prisma";
 export const metadata: Metadata = { title: "Správa" };
 
 export default async function AdminHomePage() {
-  const [userCount, adminCount, pointCount] = await Promise.all([
+  const [userCount, adminCount, pointCount, regionCount] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { role: "admin" } }),
     prisma.mapPoint.count(),
+    prisma.region.count(),
   ]);
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Uživatelé" value={userCount} />
         <Stat label="Admini" value={adminCount} />
+        <Stat label="Oblasti" value={regionCount} />
         <Stat label="Body na mapě" value={pointCount} />
       </div>
 
       <div className="flex flex-col gap-2">
+        <Card
+          href="/admin/oblasti"
+          title="Oblasti (kraje)"
+          desc="Zakládej kraje Skrytokraje průběžně — Petřvald, Průhonice a další."
+        />
         <Card
           href="/admin/uzivatele"
           title="Uživatelé"
@@ -33,7 +40,7 @@ export default async function AdminHomePage() {
       </div>
 
       <p className="text-sm text-kraj-muted">
-        Připravuje se: model oblastí (kraje) a správa obsahu přímo na webu.
+        Připravuje se: napojení bodů na oblast a správa obsahu přímo na webu.
       </p>
     </div>
   );
