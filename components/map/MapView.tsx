@@ -167,6 +167,20 @@ export function MapView({
     }
   }
 
+  // Přesun bodu tažením (jen pro body, které uživatel smí editovat).
+  async function handleMarkerDragEnd(
+    p: MapPointDTO,
+    lngLat: { lng: number; lat: number },
+  ) {
+    const res = await fetch(`/api/points/${p.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lat: lngLat.lat, lng: lngLat.lng }),
+    });
+    if (!res.ok) window.alert("Přesun se nepovedl.");
+    await refetch();
+  }
+
   async function handleDelete(p: MapPointDTO) {
     if (!window.confirm(`Opravdu smazat „${p.name}"?`)) return;
     const res = await fetch(`/api/points/${p.id}`, { method: "DELETE" });
@@ -188,6 +202,11 @@ export function MapView({
           style={{ width: "100%", height: "100%" }}
           cursor={placing ? "crosshair" : undefined}
           onClick={handleMapClick}
+          onLoad={() => {
+            // Vycentruj na polohu hráče (funguje kdekoli — Petřvald, Průhonice…).
+            // Když polohu nepovolí, zůstane výchozí střed.
+            geoRef.current?.trigger();
+          }}
         >
           <GeolocateControl
             ref={geoRef}
@@ -205,20 +224,31 @@ export function MapView({
 
           {points.map((p) => {
             const meta = MAP_POINT_TYPES[p.type];
+            const editable = canEdit(p);
             return (
               <Marker
                 key={p.id}
                 longitude={p.lng}
                 latitude={p.lat}
                 anchor="center"
+                draggable={editable}
+                onDragEnd={(e) => handleMarkerDragEnd(p, e.lngLat)}
                 onClick={(e) => {
                   e.originalEvent.stopPropagation();
                   setSelectedId(p.id);
                 }}
               >
                 <span
-                  title={p.name}
-                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-2 border-black/40 text-sm shadow-md"
+                  title={
+                    editable
+                      ? `${p.name} — tažením přesuneš`
+                      : p.name
+                  }
+                  className={`flex h-7 w-7 items-center justify-center rounded-full border-2 text-sm shadow-md ${
+                    editable
+                      ? "cursor-grab border-white/70 active:cursor-grabbing"
+                      : "cursor-pointer border-black/40"
+                  }`}
                   style={{ backgroundColor: meta.color }}
                 >
                   {meta.emoji}

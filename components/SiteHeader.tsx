@@ -2,13 +2,13 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Role } from "@/generated/prisma/client";
 import { logoutAction } from "@/lib/actions/auth";
+import { MobileMenu } from "@/components/MobileMenu";
 
 interface SiteHeaderProps {
   user: { name: string; role: Role } | null;
 }
 
-// Hlavní navigace. Sekce Kronika a Vzkazy jsou zatím placeholdery pro
-// budoucí fáze (viz PROJECT.md) — v menu jsou, ale obsah přijde později.
+// Hlavní navigace. Sekce Kronika je zatím placeholder pro budoucí fázi.
 const NAV = [
   { href: "/", label: "Úvod" },
   { href: "/mapa", label: "Mapa" },
@@ -18,8 +18,10 @@ const NAV = [
 export function SiteHeader({ user }: SiteHeaderProps) {
   return (
     <header className="sticky top-0 z-20 border-b border-kraj-border bg-kraj-bg/85 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-5xl items-center gap-4 px-4 py-3">
-        <Link href="/" className="flex items-center gap-2.5 shrink-0">
+      <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-3">
+        <MobileMenu items={NAV} />
+
+        <Link href="/" className="flex shrink-0 items-center gap-2.5">
           <Image
             src="/icon.svg"
             alt=""
@@ -82,19 +84,6 @@ export function SiteHeader({ user }: SiteHeaderProps) {
           )}
         </div>
       </div>
-
-      {/* Mobilní navigace (odkazy pod hlavičkou) */}
-      <nav className="flex gap-1 overflow-x-auto border-t border-kraj-border px-4 py-2 sm:hidden">
-        {NAV.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm text-kraj-muted hover:text-kraj-fg"
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
     </header>
   );
 }
