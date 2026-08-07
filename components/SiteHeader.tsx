@@ -16,10 +16,16 @@ const NAV = [
 ];
 
 export function SiteHeader({ user }: SiteHeaderProps) {
+  // Adminům přidáme do menu odkaz na Správu.
+  const navItems =
+    user?.role === "admin"
+      ? [...NAV, { href: "/admin", label: "Správa" }]
+      : NAV;
+
   return (
     <header className="sticky top-0 z-20 border-b border-kraj-border bg-kraj-bg/85 backdrop-blur">
       <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-3">
-        <MobileMenu items={NAV} />
+        <MobileMenu items={navItems} />
 
         <Link href="/" className="flex shrink-0 items-center gap-2.5">
           <Image
@@ -35,7 +41,7 @@ export function SiteHeader({ user }: SiteHeaderProps) {
         </Link>
 
         <nav className="ml-2 hidden gap-1 sm:flex">
-          {NAV.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
