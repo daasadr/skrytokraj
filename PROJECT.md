@@ -191,15 +191,25 @@ Vzory: `.env.example` (lokál), `.env.production.example` (server). `.env` se ne
 - REST API pro body a uživatele s kontrolou oprávnění.
 - Produkční nasazení: Dockerfile, `compose.prod.yml`, entrypoint (migrace+seed),
   `deploy/nginx.*` vzor, `DEPLOY.md`. Kód na GitHubu.
+- Dokončení fáze 1: rastrové PWA ikony (192/512, maskable, apple-touch), skládací
+  mobilní menu (hamburger), přesun bodu tažením markeru, vycentrování mapy na polohu
+  hráče při načtení (podpora více oblastí).
 - Ověřeno: `tsc --noEmit` ✓, `next build` ✓, runtime smoke test ✓.
 
 ### Aktuální stav
 - **Nasazeno a funkční na produkční subdoméně** (git → server → Docker, za hostitelským
   nginx s HTTPS). Přihlášení, mapa i podklad (MapTiler) běží. Fáze 1 je živá. 🎉
 
+### Velké rozhodnutí k promyšlení: oblasti / kapitoly
+Skrytokraj se rozšíří za Petřvald (Průhonice a dál; časem víc adminů). Dvě vize:
+(A) **volná mapa** jako klasický geocaching — všechny cíle podle polohy hráče;
+(B) **kapitoly po oblastech** — každá oblast má svůj příběh a styl. Nejsou to protiklady:
+doporučení je přidat lehký model **Region/Oblast** (bod patří do oblasti), který umožní
+oboje — výchozí je volná mapa dle polohy, a zároveň jde filtrovat/„vstoupit do kapitoly".
+Rozhodnutí zatím otevřené — probrat před dalším větším krokem.
+
 ### Plán / další fáze
-- **Fáze 1 — dokončení:** rastrové PWA ikony (192/512, maskable) + apple-touch-icon;
-  skládací mobilní menu; možnost přesunout bod při editaci.
+- **Datový model oblastí** (Region) — až se rozhodne směr (viz výše).
 - **Další fáze:** sekce Kronika/příběhy (obsah), chat mezi uživateli, reálný AR obsah,
   pokročilá administrace uživatelů, prostorové dotazy „body v okolí" (PostGIS),
   reset hesla, e-mailové notifikace.
