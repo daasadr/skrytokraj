@@ -40,7 +40,8 @@ export default async function AdminHomePage() {
       </div>
 
       <p className="text-sm text-kraj-muted">
-        Připravuje se: napojení bodů na oblast a správa obsahu přímo na webu.
+        Připravuje se: správa obsahu (úkoly, příběhy) přímo na webu a úkolová
+        mechanika.
       </p>
     </div>
   );

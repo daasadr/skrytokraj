@@ -197,6 +197,9 @@ Vzory: `.env.example` (lokál), `.env.production.example` (server). `.env` se ne
 - Admin sekce `/admin`: správa uživatelů (změna rolí), správa **Oblastí (krajů)** —
   zakládání/editace/mazání s úvodem příběhu, středem, stylem a zveřejněním.
 - Model **Region** + `regionId` na bodu (migrace `00000000000001_regions`).
+- Oblasti end-to-end: bod lze zařadit do oblasti; mapa má přepínač „Kraj"
+  (vstup do kapitoly vycentruje mapu, ukáže úvod příběhu a jen body oblasti;
+  „Všechny" = volná mapa); admin vybírá střed oblasti klepnutím do mini-mapy.
 - Ověřeno: `tsc --noEmit` ✓, `next build` ✓, runtime smoke test ✓.
 
 ### Aktuální stav
