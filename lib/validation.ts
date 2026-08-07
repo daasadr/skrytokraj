@@ -18,6 +18,7 @@ export const createPointSchema = z.object({
   visibility: z.enum(["public", "private_user"]).optional(),
   recipientId: z.string().nullish(),
   arContent: z.string().max(2000).nullish(),
+  regionId: z.string().nullish(),
 });
 
 export const updatePointSchema = z.object({
@@ -28,6 +29,7 @@ export const updatePointSchema = z.object({
   visibility: z.enum(["public", "private_user"]).optional(),
   recipientId: z.string().nullish(),
   arContent: z.string().max(2000).nullish(),
+  regionId: z.string().nullish(),
   isActive: z.boolean().optional(),
 });
 

@@ -1,8 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import type { RegionDTO } from "@/lib/regions";
 import { DEFAULT_MAP_CENTER } from "@/lib/mapPoints";
+
+// Mini-mapa pro výběr středu — bez SSR (MapLibre potřebuje window).
+const RegionCenterPicker = dynamic(
+  () => import("./RegionCenterPicker").then((m) => m.RegionCenterPicker),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-64 items-center justify-center rounded-lg border border-kraj-border text-kraj-muted">
+        Načítám mapu…
+      </div>
+    ),
+  },
+);
 
 interface FormValues {
   name: string;
@@ -35,7 +49,13 @@ function slugify(s: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-export function RegionManager({ initial }: { initial: RegionDTO[] }) {
+export function RegionManager({
+  initial,
+  mapStyleUrl,
+}: {
+  initial: RegionDTO[];
+  mapStyleUrl: string;
+}) {
   const [regions, setRegions] = useState<RegionDTO[]>(initial);
   const [editingId, setEditingId] = useState<string | null>(null); // null = zavřeno, "new" = nová
   const [form, setForm] = useState<FormValues>(emptyForm);
@@ -233,6 +253,26 @@ export function RegionManager({ initial }: { initial: RegionDTO[] }) {
                 className="w-full rounded-lg border border-kraj-border bg-kraj-bg px-3 py-2 outline-none focus:border-kraj-accent"
               />
             </Field>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-sm text-kraj-muted">
+              Střed na mapě — klepni nebo táhni značku; přiblížením nastavíš zoom
+            </span>
+            <RegionCenterPicker
+              mapStyleUrl={mapStyleUrl}
+              lat={Number(form.centerLat) || DEFAULT_MAP_CENTER.latitude}
+              lng={Number(form.centerLng) || DEFAULT_MAP_CENTER.longitude}
+              zoom={Number(form.defaultZoom) || 13}
+              onChange={({ lat, lng, zoom }) =>
+                setForm((f) => ({
+                  ...f,
+                  centerLat: lat.toFixed(6),
+                  centerLng: lng.toFixed(6),
+                  defaultZoom: String(Math.round(zoom * 10) / 10),
+                }))
+              }
+            />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">

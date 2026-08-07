@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { MapPointTypeKey } from "@/lib/mapPoints";
+import type { MapPointTypeKey, RegionOption } from "@/lib/mapPoints";
 import { MAP_POINT_TYPES } from "@/lib/mapPoints";
 import type { UserOption } from "@/lib/points";
 
@@ -11,6 +11,7 @@ export interface PointFormValues {
   visibility: "public" | "private_user";
   recipientId: string | null;
   arContent: string;
+  regionId: string | null;
 }
 
 interface PointFormProps {
@@ -18,6 +19,7 @@ interface PointFormProps {
   mode: "create" | "edit";
   coords: { lat: number; lng: number };
   users: UserOption[];
+  regions: RegionOption[];
   currentUserId: string;
   initial?: Partial<PointFormValues>;
   busy: boolean;
@@ -31,6 +33,7 @@ export function PointForm({
   mode,
   coords,
   users,
+  regions,
   currentUserId,
   initial,
   busy,
@@ -51,6 +54,7 @@ export function PointForm({
     initial?.recipientId ?? "",
   );
   const [arContent, setArContent] = useState(initial?.arContent ?? "");
+  const [regionId, setRegionId] = useState<string>(initial?.regionId ?? "");
 
   const recipients = users.filter((u) => u.id !== currentUserId);
 
@@ -65,6 +69,7 @@ export function PointForm({
           ? recipientId || null
           : null,
       arContent: isAr ? arContent.trim() : "",
+      regionId: regionId || null,
     });
   }
 
@@ -123,6 +128,24 @@ export function PointForm({
             onChange={(e) => setArContent(e.target.value)}
             className="rounded-lg border border-kraj-border bg-kraj-bg2 px-3 py-2 outline-none focus:border-kraj-accent"
           />
+        </label>
+      )}
+
+      {regions.length > 0 && (
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-kraj-muted">Oblast (kraj)</span>
+          <select
+            value={regionId}
+            onChange={(e) => setRegionId(e.target.value)}
+            className="rounded-lg border border-kraj-border bg-kraj-bg2 px-3 py-2 outline-none focus:border-kraj-accent"
+          >
+            <option value="">— bez oblasti —</option>
+            {regions.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
         </label>
       )}
 

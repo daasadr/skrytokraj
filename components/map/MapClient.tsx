@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { MapPointDTO, UserOption } from "@/lib/points";
+import type { RegionOption } from "@/lib/mapPoints";
 
 // MapView načítáme dynamicky bez SSR — mapbox-gl potřebuje `window`.
 const MapView = dynamic(
@@ -19,6 +20,7 @@ const MapView = dynamic(
 interface MapClientProps {
   initialPoints: MapPointDTO[];
   users: UserOption[];
+  regions: RegionOption[];
   currentUser: { id: string; role: "admin" | "user" };
   mapStyleUrl: string;
 }

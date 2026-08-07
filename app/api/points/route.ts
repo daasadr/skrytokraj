@@ -72,6 +72,22 @@ export async function POST(request: Request) {
     recipientId = recipient.id;
   }
 
+  // Zařazení do oblasti (nepovinné) — ověříme, že oblast existuje.
+  let regionId: string | null = null;
+  if (data.regionId) {
+    const region = await prisma.region.findUnique({
+      where: { id: data.regionId },
+      select: { id: true },
+    });
+    if (!region) {
+      return NextResponse.json(
+        { error: "Vybraná oblast neexistuje." },
+        { status: 400 },
+      );
+    }
+    regionId = region.id;
+  }
+
   // Název: u schránky nepovinný, doplníme rozumný default.
   const name =
     data.name && data.name.length > 0
@@ -90,6 +106,7 @@ export async function POST(request: Request) {
       visibility,
       recipientId,
       arContent: data.type === "ar_location" ? (data.arContent ?? null) : null,
+      regionId,
       createdById: session.user.id,
     },
     select: { id: true },

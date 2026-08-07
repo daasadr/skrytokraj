@@ -52,3 +52,16 @@ export const DEFAULT_MAP_CENTER = {
   latitude: 49.755,
   zoom: 12.5,
 };
+
+// Oblast (kraj) pro použití v klientských komponentách mapy (client-safe,
+// bez serverových importů).
+export interface RegionOption {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  centerLat: number;
+  centerLng: number;
+  defaultZoom: number;
+  color: string | null;
+}

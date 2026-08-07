@@ -71,6 +71,27 @@ export async function PATCH(
     recipientId = null;
   }
 
+  // Zařazení do oblasti — měníme jen když je regionId v těle (undefined = beze změny,
+  // null/"" = vyřadit z oblasti).
+  const regionUpdate: { regionId?: string | null } = {};
+  if (data.regionId !== undefined) {
+    if (data.regionId) {
+      const region = await prisma.region.findUnique({
+        where: { id: data.regionId },
+        select: { id: true },
+      });
+      if (!region) {
+        return NextResponse.json(
+          { error: "Vybraná oblast neexistuje." },
+          { status: 400 },
+        );
+      }
+      regionUpdate.regionId = region.id;
+    } else {
+      regionUpdate.regionId = null;
+    }
+  }
+
   await prisma.mapPoint.update({
     where: { id },
     data: {
@@ -82,6 +103,7 @@ export async function PATCH(
       recipientId,
       arContent: data.arContent,
       isActive: data.isActive,
+      ...regionUpdate,
     },
   });
 

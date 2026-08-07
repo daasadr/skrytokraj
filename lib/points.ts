@@ -13,6 +13,8 @@ export interface MapPointDTO {
   visibility: "public" | "private_user";
   recipientId: string | null;
   arContent: string | null;
+  regionId: string | null;
+  regionName: string | null;
   createdById: string;
   createdByName: string;
   createdAt: string;
@@ -40,7 +42,10 @@ export async function getVisiblePoints(userId: string): Promise<MapPointDTO[]> {
         { createdById: userId },
       ],
     },
-    include: { createdBy: { select: { name: true } } },
+    include: {
+      createdBy: { select: { name: true } },
+      region: { select: { name: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -54,6 +59,8 @@ export async function getVisiblePoints(userId: string): Promise<MapPointDTO[]> {
     visibility: p.visibility,
     recipientId: p.recipientId,
     arContent: p.arContent,
+    regionId: p.regionId,
+    regionName: p.region?.name ?? null,
     createdById: p.createdById,
     createdByName: p.createdBy.name,
     createdAt: p.createdAt.toISOString(),
