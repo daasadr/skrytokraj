@@ -67,10 +67,10 @@ Dvě tabulky (`prisma/schema.prisma`):
 
 **MapPoint** — jeden bod na mapě, sdílený základ pro všechny typy:
 - `type`: `quest` | `treasure` | `story_location` | `ar_location` | `message_box`
-- `name`, `description`
+- `name`, `description` (příběh), `hint` (nápověda k nalezení — odděleně)
 - `lat`, `lng` (Float; souřadnice WGS84)
-- `visibility`: `public` | `private_user`
-- `recipientId` (nullable) — u soukromé schránky příjemce
+- `visibility`: `public` | `private_user` (u sdílitelných typů — schránka, poklad)
+- `recipientId` (nullable) — komu je soukromě sdíleno
 - `createdById` — autor
 - `arContent` (nullable) — placeholder pro budoucí AR obsah
 - `isActive` — deaktivace bez mazání
@@ -83,10 +83,12 @@ Proč jedna tabulka místo oddělené `MessageBox` — viz §12.
 - **JWT session** — `id` a `role` neseme v tokenu i session (typy v
   `types/next-auth.d.ts`).
 - **Role:**
-  - `admin` — zakládá/edituje/maže úkoly, poklady, příběhová a AR místa; smí upravovat
-    a mazat libovolný bod.
-  - `user` (kronikář) — zakládá schránky se vzkazem (veřejné, nebo jen konkrétnímu
-    uživateli); smí mazat/upravovat vlastní schránky.
+  - `admin` — zakládá/edituje/maže úkoly, příběhová a AR místa; smí upravovat a mazat
+    libovolný bod.
+  - `user` (kronikář) — zakládá **schránky se vzkazem a poklady** (sdílitelné typy):
+    veřejně, nebo jen konkrétnímu uživateli; smí mazat/upravovat vlastní body.
+  - „Sdílitelné" typy (schránka, poklad) mají volbu viditelnosti; úkoly/příběhy/AR
+    (adminské) jsou vždy veřejné. Řízeno přes `MAP_POINT_TYPES.shareable`/`adminOnly`.
 - **Ochrana rout:** `proxy.ts` (v Next 16 nástupce `middleware.ts`) přesměruje
   nepřihlášené z `/mapa` na `/prihlaseni`.
 - Registrace je zatím **volná a veřejná** (nová role `user`) — otevřená otázka §13.
