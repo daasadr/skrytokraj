@@ -201,6 +201,9 @@ Vzory: `.env.example` (lokál), `.env.production.example` (server). `.env` se ne
 - Admin sekce `/admin`: správa uživatelů (změna rolí), správa **Oblastí (krajů)** —
   zakládání/editace/mazání s úvodem příběhu, středem, stylem a zveřejněním.
 - Model **Region** + `regionId` na bodu (migrace `00000000000001_regions`).
+- **Fotky u bodů** (nepovinné, všechny typy): komprese v prohlížeči (canvas) před
+  uploadem, uložení na perzistentní disk (volume), galerie v detailu. Migrace
+  `00000000000004_point_images`. API `/api/upload` + `/api/photos/[name]`.
 - Soukromé sdílení bodu i na **e-mail** (příjemce bez účtu ho uvidí po registraci;
   s Resend přijde pozvánka) + zvýraznění „jen pro tebe" na mapě (zlatá záře + 🎁).
   Migrace `00000000000003_recipient_email`.

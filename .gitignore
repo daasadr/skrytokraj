@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Prisma generated client (regenerováno přes postinstall: prisma generate)
 /generated
+
+# Lokálně nahrané fotky (na serveru jsou v docker volume)
+/uploads

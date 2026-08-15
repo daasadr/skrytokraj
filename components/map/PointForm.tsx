@@ -4,11 +4,15 @@ import { useState } from "react";
 import type { MapPointTypeKey, RegionOption } from "@/lib/mapPoints";
 import { MAP_POINT_TYPES } from "@/lib/mapPoints";
 import type { UserOption } from "@/lib/points";
+import { compressImage } from "@/lib/imageCompress";
+
+const MAX_PHOTOS = 8;
 
 export interface PointFormValues {
   name: string;
   description: string;
   hint: string;
+  imageUrls: string[];
   visibility: "public" | "private_user";
   recipientId: string | null;
   recipientEmail: string | null;
@@ -67,6 +71,43 @@ export function PointForm({
   );
   const [arContent, setArContent] = useState(initial?.arContent ?? "");
   const [regionId, setRegionId] = useState<string>(initial?.regionId ?? "");
+  const [images, setImages] = useState<string[]>(initial?.imageUrls ?? []);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const room = MAX_PHOTOS - images.length;
+      const picked = Array.from(files).slice(0, Math.max(0, room));
+      for (const file of picked) {
+        if (!file.type.startsWith("image/")) continue;
+        const blob = await compressImage(file);
+        const fd = new FormData();
+        fd.append("file", blob, "photo.jpg");
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        if (!res.ok) {
+          const d = (await res.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          setUploadError(d?.error ?? "Nahrání fotky se nepovedlo.");
+          continue;
+        }
+        const { url } = (await res.json()) as { url: string };
+        setImages((prev) => [...prev, url]);
+      }
+    } catch {
+      setUploadError("Zpracování fotky selhalo.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function removeImage(url: string) {
+    setImages((prev) => prev.filter((u) => u !== url));
+  }
 
   const recipients = users.filter((u) => u.id !== currentUserId);
 
@@ -76,6 +117,7 @@ export function PointForm({
       name: name.trim(),
       description: description.trim(),
       hint: showHint ? hint.trim() : "",
+      imageUrls: images,
       visibility: shareable ? visibility : "public",
       recipientId:
         shareable && visibility === "private_user" && recipientMode === "user"
@@ -162,6 +204,49 @@ export function PointForm({
           />
         </label>
       )}
+
+      <div className="flex flex-col gap-2 text-sm">
+        <span className="text-kraj-muted">Fotky (nepovinné)</span>
+        {images.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {images.map((url) => (
+              <div key={url} className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt="fotka bodu"
+                  className="h-16 w-16 rounded-md border border-kraj-border object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeImage(url)}
+                  aria-label="Odebrat fotku"
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-kraj-border bg-kraj-bg2 text-xs"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {images.length < MAX_PHOTOS && (
+          <label className="w-fit cursor-pointer rounded-lg border border-dashed border-kraj-border px-3 py-2 text-kraj-muted hover:text-kraj-fg">
+            {uploading ? "Nahrávám…" : "＋ Přidat fotku"}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              disabled={uploading}
+              className="hidden"
+              onChange={(e) => {
+                handleFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </label>
+        )}
+        {uploadError && <p className="text-xs text-red-300">{uploadError}</p>}
+      </div>
 
       {regions.length > 0 && (
         <label className="flex flex-col gap-1 text-sm">

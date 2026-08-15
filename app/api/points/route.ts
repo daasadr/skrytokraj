@@ -133,6 +133,7 @@ export async function POST(request: Request) {
       name,
       description: data.description ?? null,
       hint: data.hint ?? null,
+      imageUrls: data.imageUrls ?? [],
       lat: data.lat,
       lng: data.lng,
       visibility,

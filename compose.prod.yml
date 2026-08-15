@@ -51,6 +51,10 @@ services:
       # E-mailové pozvánky (nepovinné, Resend) — runtime, bez rebuildu
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-Skrytokraj <onboarding@resend.dev>}
+      # Nahrané fotky (perzistentní disk)
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
     ports:
       # Jen localhost — na tento port se napojí hostitelská proxy (skrytokraj.<doména>).
       # 3000/3001/3002 jsou obsazené jinými projekty, proto 3003.
@@ -60,6 +64,7 @@ services:
 
 volumes:
   pgdata:
+  uploads:
 
 networks:
   internal:

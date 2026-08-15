@@ -9,6 +9,7 @@ export interface MapPointDTO {
   name: string;
   description: string | null;
   hint: string | null;
+  imageUrls: string[];
   lat: number;
   lng: number;
   visibility: "public" | "private_user";
@@ -74,6 +75,7 @@ export async function getVisiblePoints(
       name: p.name,
       description: p.description,
       hint: p.hint,
+      imageUrls: p.imageUrls,
       lat: p.lat,
       lng: p.lng,
       visibility: p.visibility,

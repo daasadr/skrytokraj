@@ -132,6 +132,7 @@ export function MapView({
         name: p.name,
         description: p.description ?? "",
         hint: p.hint ?? "",
+        imageUrls: p.imageUrls,
         visibility: p.visibility,
         recipientId: p.recipientId,
         recipientEmail: p.recipientEmail,
@@ -168,6 +169,7 @@ export function MapView({
       name: values.name,
       description: values.description || null,
       hint: values.hint || null,
+      imageUrls: values.imageUrls,
       visibility: values.visibility,
       recipientId: values.recipientId,
       recipientEmail: values.recipientEmail,
@@ -507,6 +509,20 @@ function PointDetail({
         {meta.emoji} {meta.label}
       </span>
       <h3 className="text-base font-semibold">{point.name}</h3>
+      {point.imageUrls.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {point.imageUrls.map((url) => (
+            <a key={url} href={url} target="_blank" rel="noreferrer">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url}
+                alt="fotka bodu"
+                className="h-16 w-16 rounded-md border border-kraj-border object-cover"
+              />
+            </a>
+          ))}
+        </div>
+      )}
       {point.description && (
         <p className="whitespace-pre-wrap text-sm text-kraj-muted">
           {point.description}
