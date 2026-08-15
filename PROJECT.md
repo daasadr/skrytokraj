@@ -201,6 +201,10 @@ Vzory: `.env.example` (lokál), `.env.production.example` (server). `.env` se ne
 - Admin sekce `/admin`: správa uživatelů (změna rolí), správa **Oblastí (krajů)** —
   zakládání/editace/mazání s úvodem příběhu, středem, stylem a zveřejněním.
 - Model **Region** + `regionId` na bodu (migrace `00000000000001_regions`).
+- **Offline PWA:** service worker cachuje app shell (otevře se offline), statické
+  buildy, a **mapové dlaždice/styl podle toho, co si projdeš online** (kraj pak funguje
+  offline). Poloha (GPS) funguje offline sama. Offline *zápis* bodu (fronta) a stažení
+  celého kraje naráz zatím ne — viz plán.
 - **Úkolová mechanika:** úkol/poklad může mít správnou odpověď/kód; hráč ji v detailu
   zadá (posuzuje se bez ohledu na velikost písmen a diakritiku), vyřešení se zaznamená
   (tabulka `point_completions`) a marker dostane ✓. Odpověď se hráčům **nikdy neposílá**
