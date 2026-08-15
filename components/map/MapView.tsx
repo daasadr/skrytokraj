@@ -63,8 +63,21 @@ export function MapView({
   // Aktivní kapitola (oblast). null = volná mapa (všechny body).
   const [activeRegionId, setActiveRegionId] = useState<string | null>(null);
   const [showRegionIntro, setShowRegionIntro] = useState(false);
+  const [copied, setCopied] = useState(false);
   const geoRef = useRef<MaplibreGeolocateControl | null>(null);
   const mapRef = useRef<MapRef | null>(null);
+
+  async function copyCoords() {
+    if (!userPos) return;
+    const text = `${userPos.lat.toFixed(6)}, ${userPos.lng.toFixed(6)}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // schránka nedostupná (např. bez HTTPS) — tiše ignorujeme
+    }
+  }
 
   const isAdmin = currentUser.role === "admin";
   const activeRegion = regions.find((r) => r.id === activeRegionId) ?? null;
@@ -381,6 +394,21 @@ export function MapView({
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {userPos && (
+            <div className="flex w-fit items-center gap-2 rounded-xl border border-kraj-border bg-kraj-bg/90 px-3 py-2 text-sm backdrop-blur">
+              <span title="Tvoje aktuální poloha (GPS — funguje i offline)">
+                📍 {userPos.lat.toFixed(5)}, {userPos.lng.toFixed(5)}
+              </span>
+              <button
+                type="button"
+                onClick={copyCoords}
+                className="rounded-md border border-kraj-border px-2 py-0.5 text-xs text-kraj-accent"
+              >
+                {copied ? "Zkopírováno ✓" : "Kopírovat"}
+              </button>
             </div>
           )}
 
