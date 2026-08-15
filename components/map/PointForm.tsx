@@ -12,6 +12,7 @@ export interface PointFormValues {
   name: string;
   description: string;
   hint: string;
+  answer: string;
   imageUrls: string[];
   visibility: "public" | "private_user";
   recipientId: string | null;
@@ -52,10 +53,12 @@ export function PointForm({
   const isAr = type === "ar_location";
   const shareable = meta.shareable; // schránka i poklad
   const showHint = !isMessageBox; // nápověda k nalezení (ne u vzkazu)
+  const showAnswer = type === "quest" || type === "treasure"; // odpověď/kód
 
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [hint, setHint] = useState(initial?.hint ?? "");
+  const [answer, setAnswer] = useState(initial?.answer ?? "");
   const [visibility, setVisibility] = useState<"public" | "private_user">(
     initial?.visibility ?? "public",
   );
@@ -117,6 +120,7 @@ export function PointForm({
       name: name.trim(),
       description: description.trim(),
       hint: showHint ? hint.trim() : "",
+      answer: showAnswer ? answer.trim() : "",
       imageUrls: images,
       visibility: shareable ? visibility : "public",
       recipientId:
@@ -188,6 +192,25 @@ export function PointForm({
             placeholder="Kde a jak to najít…"
             className="resize-y rounded-lg border border-kraj-border bg-kraj-bg2 px-3 py-2 outline-none focus:border-kraj-accent"
           />
+        </label>
+      )}
+
+      {showAnswer && (
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-kraj-muted">
+            Správná odpověď / kód (nepovinné)
+          </span>
+          <input
+            type="text"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            placeholder="Co má hráč zadat, aby úkol vyřešil"
+            className="rounded-lg border border-kraj-border bg-kraj-bg2 px-3 py-2 outline-none focus:border-kraj-accent"
+          />
+          <span className="text-xs text-kraj-muted">
+            Posuzuje se bez ohledu na velikost písmen a diakritiku. Prázdné = bez
+            ověřování.
+          </span>
         </label>
       )}
 

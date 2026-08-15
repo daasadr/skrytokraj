@@ -53,6 +53,8 @@ model User {
   receivedPoints MapPoint[] @relation("Recipient")
   // oblasti (kraje), které uživatel založil
   createdRegions Region[]   @relation("RegionCreatedBy")
+  // vyřešené úkoly / nasbírané body
+  completions    PointCompletion[]
 
   @@map("users")
 }
@@ -66,6 +68,7 @@ model MapPoint {
   name        String
   description String?      @db.Text // příběh / obsah bodu
   hint        String?      @db.Text // nápověda k nalezení (odděleně od příběhu)
+  answer      String? // správná odpověď/kód u úkolu (hráčům se neposílá)
   imageUrls   String[] // fotky (nepovinné) — optimalizované v prohlížeči před uploadem
 
   // Souřadnice (WGS84). PostGIS geometry sloupec se doplní později přes
@@ -97,6 +100,8 @@ model MapPoint {
   isActive  Boolean  @default(true) // deaktivace bez mazání
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  completions PointCompletion[]
 
   @@index([type])
   @@index([visibility])
@@ -132,4 +137,19 @@ model Region {
   updatedAt DateTime @updatedAt
 
   @@map("regions")
+}
+
+// --- Dokončení úkolu / nasbíraný bod ----------------------------------------
+// Kdo který bod vyřešil/našel (úkoly, do budoucna i poklady).
+model PointCompletion {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pointId     String
+  point       MapPoint @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  completedAt DateTime @default(now())
+
+  @@unique([userId, pointId])
+  @@index([pointId])
+  @@map("point_completions")
 }

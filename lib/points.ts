@@ -10,6 +10,12 @@ export interface MapPointDTO {
   description: string | null;
   hint: string | null;
   imageUrls: string[];
+  /** má bod odpověď k zadání (úkol k vyřešení)? */
+  hasAnswer: boolean;
+  /** vyřešil/našel tento bod aktuální uživatel? */
+  solved: boolean;
+  /** správná odpověď — jen pro admina/autora (jinak null) */
+  answer: string | null;
   lat: number;
   lng: number;
   visibility: "public" | "private_user";
@@ -40,6 +46,7 @@ export interface UserOption {
 export async function getVisiblePoints(
   userId: string,
   userEmail?: string | null,
+  isAdmin = false,
 ): Promise<MapPointDTO[]> {
   const email = userEmail?.toLowerCase() ?? null;
 
@@ -58,6 +65,7 @@ export async function getVisiblePoints(
     include: {
       createdBy: { select: { name: true } },
       region: { select: { name: true } },
+      completions: { where: { userId }, select: { id: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -69,6 +77,9 @@ export async function getVisiblePoints(
       (p.recipientId === userId ||
         (!!email && p.recipientEmail?.toLowerCase() === email));
 
+    // Odpověď smí vidět jen admin nebo autor bodu — nikdy běžný hráč.
+    const canSeeAnswer = isAdmin || p.createdById === userId;
+
     return {
       id: p.id,
       type: p.type as MapPointTypeKey,
@@ -76,6 +87,9 @@ export async function getVisiblePoints(
       description: p.description,
       hint: p.hint,
       imageUrls: p.imageUrls,
+      hasAnswer: !!p.answer && p.answer.length > 0,
+      solved: p.completions.length > 0,
+      answer: canSeeAnswer ? p.answer : null,
       lat: p.lat,
       lng: p.lng,
       visibility: p.visibility,

@@ -14,7 +14,11 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ error: "Nepřihlášen" }, { status: 401 });
   }
-  const points = await getVisiblePoints(session.user.id, session.user.email);
+  const points = await getVisiblePoints(
+    session.user.id,
+    session.user.email,
+    session.user.role === "admin",
+  );
   return NextResponse.json({ points });
 }
 
@@ -133,6 +137,7 @@ export async function POST(request: Request) {
       name,
       description: data.description ?? null,
       hint: data.hint ?? null,
+      answer: data.answer?.trim() ? data.answer.trim() : null,
       imageUrls: data.imageUrls ?? [],
       lat: data.lat,
       lng: data.lng,

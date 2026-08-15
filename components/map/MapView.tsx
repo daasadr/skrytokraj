@@ -132,6 +132,7 @@ export function MapView({
         name: p.name,
         description: p.description ?? "",
         hint: p.hint ?? "",
+        answer: p.answer ?? "",
         imageUrls: p.imageUrls,
         visibility: p.visibility,
         recipientId: p.recipientId,
@@ -169,6 +170,7 @@ export function MapView({
       name: values.name,
       description: values.description || null,
       hint: values.hint || null,
+      answer: values.answer || null,
       imageUrls: values.imageUrls,
       visibility: values.visibility,
       recipientId: values.recipientId,
@@ -237,6 +239,24 @@ export function MapView({
     } else {
       window.alert("Smazání se nepovedlo.");
     }
+  }
+
+  // Řešení úkolu: pošle odpověď, a když sedí, označí bod jako vyřešený.
+  async function handleSolve(pointId: string, answer: string): Promise<boolean> {
+    const res = await fetch(`/api/points/${pointId}/solve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answer }),
+    });
+    if (!res.ok) return false;
+    const data = (await res.json()) as { correct?: boolean };
+    if (data.correct) {
+      setPoints((prev) =>
+        prev.map((p) => (p.id === pointId ? { ...p, solved: true } : p)),
+      );
+      return true;
+    }
+    return false;
   }
 
   return (
@@ -311,6 +331,11 @@ export function MapView({
                       🎁
                     </span>
                   )}
+                  {p.solved && p.hasAnswer && (
+                    <span className="pointer-events-none absolute -bottom-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-[9px] font-bold text-white">
+                      ✓
+                    </span>
+                  )}
                 </span>
               </Marker>
             );
@@ -331,6 +356,7 @@ export function MapView({
                 canEdit={canEdit(selected)}
                 onEdit={() => openEditForm(selected)}
                 onDelete={() => handleDelete(selected)}
+                onSolve={(answer) => handleSolve(selected.id, answer)}
               />
             </Popup>
           )}
@@ -487,17 +513,66 @@ export function MapView({
   );
 }
 
+// --- Zadání odpovědi na úkol -------------------------------------------------
+function QuestSolve({
+  onSolve,
+}: {
+  onSolve: (answer: string) => Promise<boolean>;
+}) {
+  const [value, setValue] = useState("");
+  const [status, setStatus] = useState<"idle" | "checking" | "wrong">("idle");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!value.trim()) return;
+    setStatus("checking");
+    const ok = await onSolve(value.trim());
+    // při správné odpovědi se komponenta odmontuje (bod je „solved")
+    if (!ok) setStatus("wrong");
+  }
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-1.5">
+      <span className="text-xs text-kraj-muted">Zadej odpověď:</span>
+      <div className="flex gap-1.5">
+        <input
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setStatus("idle");
+          }}
+          className="flex-1 rounded-md border border-kraj-border bg-kraj-bg2 px-2 py-1 text-sm outline-none focus:border-kraj-accent"
+        />
+        <button
+          type="submit"
+          disabled={status === "checking"}
+          className="rounded-md bg-kraj-accent px-2.5 py-1 text-sm font-medium text-kraj-bg disabled:opacity-60"
+        >
+          {status === "checking" ? "…" : "Ověřit"}
+        </button>
+      </div>
+      {status === "wrong" && (
+        <span className="text-xs text-red-300">
+          Není to ono. Zkus naslouchat pozorněji. 🌿
+        </span>
+      )}
+    </form>
+  );
+}
+
 // --- Detail bodu v popupu ---------------------------------------------------
 function PointDetail({
   point,
   canEdit,
   onEdit,
   onDelete,
+  onSolve,
 }: {
   point: MapPointDTO;
   canEdit: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onSolve: (answer: string) => Promise<boolean>;
 }) {
   const meta = MAP_POINT_TYPES[point.type];
   return (
@@ -547,6 +622,13 @@ function PointDetail({
         <p className="text-xs text-kraj-mist">Oblast: {point.regionName}</p>
       )}
       <p className="text-xs text-kraj-muted">Založil: {point.createdByName}</p>
+
+      {point.hasAnswer &&
+        (point.solved ? (
+          <p className="text-sm font-medium text-emerald-400">✓ Vyřešeno</p>
+        ) : (
+          <QuestSolve onSolve={onSolve} />
+        ))}
 
       {canEdit && (
         <div className="mt-1.5 flex gap-2">

@@ -127,6 +127,12 @@ export async function PATCH(
       name: data.name,
       description: data.description,
       hint: data.hint,
+      answer:
+        data.answer === undefined
+          ? undefined
+          : data.answer?.trim()
+            ? data.answer.trim()
+            : null,
       imageUrls: data.imageUrls,
       lat: data.lat,
       lng: data.lng,
