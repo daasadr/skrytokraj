@@ -1,0 +1,6 @@
+# Skrytokraj — bezpečnostní kontakt (RFC 9116)
+# UPRAV: nastav svůj skutečný kontaktní e-mail (a ať schránka existuje).
+Contact: mailto:security@portfolioparadise.eu
+Expires: 2027-08-15T00:00:00.000Z
+Preferred-Languages: cs, en
+Canonical: https://skrytokraj.portfolioparadise.eu/.well-known/security.txt
