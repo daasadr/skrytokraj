@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { registerAction, type AuthFormState } from "@/lib/actions/auth";
 
@@ -8,6 +8,9 @@ const initial: AuthFormState = { error: null };
 
 export function RegisterForm() {
   const [state, formAction, pending] = useActionState(registerAction, initial);
+  // Řízená pole, ať jméno a e-mail zůstanou po chybě vyplněné (hesla se smažou).
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -18,6 +21,8 @@ export function RegisterForm() {
           name="name"
           required
           autoComplete="nickname"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           className="rounded-lg border border-kraj-border bg-kraj-bg2 px-3 py-2.5 outline-none focus:border-kraj-accent"
         />
       </label>
@@ -29,6 +34,8 @@ export function RegisterForm() {
           name="email"
           required
           autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="rounded-lg border border-kraj-border bg-kraj-bg2 px-3 py-2.5 outline-none focus:border-kraj-accent"
         />
       </label>

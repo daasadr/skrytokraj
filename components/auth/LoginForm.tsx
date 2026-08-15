@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { loginAction, type AuthFormState } from "@/lib/actions/auth";
 
@@ -8,6 +8,9 @@ const initial: AuthFormState = { error: null };
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(loginAction, initial);
+  // Řízené pole, ať e-mail zůstane vyplněný i po chybném přihlášení
+  // (React 19 jinak formulář po akci resetuje).
+  const [email, setEmail] = useState("");
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -18,6 +21,8 @@ export function LoginForm() {
           name="email"
           required
           autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="rounded-lg border border-kraj-border bg-kraj-bg2 px-3 py-2.5 outline-none focus:border-kraj-accent"
         />
       </label>
