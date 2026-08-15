@@ -13,6 +13,9 @@ export interface MapPointDTO {
   lng: number;
   visibility: "public" | "private_user";
   recipientId: string | null;
+  recipientEmail: string | null;
+  /** true = soukromý bod nasdílený právě tomuto uživateli (ne jeho vlastní) */
+  forMe: boolean;
   arContent: string | null;
   regionId: string | null;
   regionName: string | null;
@@ -33,13 +36,21 @@ export interface UserOption {
  *  - vlastní body (i soukromé, které sám založil)
  * Neaktivní body (isActive = false) se nevrací.
  */
-export async function getVisiblePoints(userId: string): Promise<MapPointDTO[]> {
+export async function getVisiblePoints(
+  userId: string,
+  userEmail?: string | null,
+): Promise<MapPointDTO[]> {
+  const email = userEmail?.toLowerCase() ?? null;
+
   const points = await prisma.mapPoint.findMany({
     where: {
       isActive: true,
       OR: [
         { visibility: "public" },
         { visibility: "private_user", recipientId: userId },
+        ...(email
+          ? [{ visibility: "private_user" as const, recipientEmail: email }]
+          : []),
         { createdById: userId },
       ],
     },
@@ -50,23 +61,33 @@ export async function getVisiblePoints(userId: string): Promise<MapPointDTO[]> {
     orderBy: { createdAt: "desc" },
   });
 
-  return points.map((p) => ({
-    id: p.id,
-    type: p.type as MapPointTypeKey,
-    name: p.name,
-    description: p.description,
-    hint: p.hint,
-    lat: p.lat,
-    lng: p.lng,
-    visibility: p.visibility,
-    recipientId: p.recipientId,
-    arContent: p.arContent,
-    regionId: p.regionId,
-    regionName: p.region?.name ?? null,
-    createdById: p.createdById,
-    createdByName: p.createdBy.name,
-    createdAt: p.createdAt.toISOString(),
-  }));
+  return points.map((p) => {
+    const forMe =
+      p.visibility === "private_user" &&
+      p.createdById !== userId &&
+      (p.recipientId === userId ||
+        (!!email && p.recipientEmail?.toLowerCase() === email));
+
+    return {
+      id: p.id,
+      type: p.type as MapPointTypeKey,
+      name: p.name,
+      description: p.description,
+      hint: p.hint,
+      lat: p.lat,
+      lng: p.lng,
+      visibility: p.visibility,
+      recipientId: p.recipientId,
+      recipientEmail: p.recipientEmail,
+      forMe,
+      arContent: p.arContent,
+      regionId: p.regionId,
+      regionName: p.region?.name ?? null,
+      createdById: p.createdById,
+      createdByName: p.createdBy.name,
+      createdAt: p.createdAt.toISOString(),
+    };
+  });
 }
 
 /** Seznam uživatelů pro výběr příjemce soukromé schránky (jen id + jméno). */

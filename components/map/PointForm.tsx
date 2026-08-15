@@ -11,6 +11,7 @@ export interface PointFormValues {
   hint: string;
   visibility: "public" | "private_user";
   recipientId: string | null;
+  recipientEmail: string | null;
   arContent: string;
   regionId: string | null;
 }
@@ -57,6 +58,13 @@ export function PointForm({
   const [recipientId, setRecipientId] = useState<string>(
     initial?.recipientId ?? "",
   );
+  const [recipientEmail, setRecipientEmail] = useState<string>(
+    initial?.recipientEmail ?? "",
+  );
+  // Režim příjemce: existující uživatel, nebo pozvánka e-mailem.
+  const [recipientMode, setRecipientMode] = useState<"user" | "email">(
+    initial?.recipientEmail ? "email" : "user",
+  );
   const [arContent, setArContent] = useState(initial?.arContent ?? "");
   const [regionId, setRegionId] = useState<string>(initial?.regionId ?? "");
 
@@ -70,8 +78,12 @@ export function PointForm({
       hint: showHint ? hint.trim() : "",
       visibility: shareable ? visibility : "public",
       recipientId:
-        shareable && visibility === "private_user"
+        shareable && visibility === "private_user" && recipientMode === "user"
           ? recipientId || null
+          : null,
+      recipientEmail:
+        shareable && visibility === "private_user" && recipientMode === "email"
+          ? recipientEmail.trim() || null
           : null,
       arContent: isAr ? arContent.trim() : "",
       regionId: regionId || null,
@@ -192,19 +204,59 @@ export function PointForm({
           </label>
 
           {visibility === "private_user" && (
-            <select
-              value={recipientId}
-              onChange={(e) => setRecipientId(e.target.value)}
-              required
-              className="mt-1 rounded-lg border border-kraj-border bg-kraj-bg2 px-3 py-2 outline-none focus:border-kraj-accent"
-            >
-              <option value="">— vyber příjemce —</option>
-              {recipients.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
+            <div className="mt-1 flex flex-col gap-2">
+              <div className="flex flex-wrap gap-3 text-sm">
+                <label className="flex items-center gap-1.5">
+                  <input
+                    type="radio"
+                    name="recipientMode"
+                    checked={recipientMode === "user"}
+                    onChange={() => setRecipientMode("user")}
+                  />
+                  Uživateli v aplikaci
+                </label>
+                <label className="flex items-center gap-1.5">
+                  <input
+                    type="radio"
+                    name="recipientMode"
+                    checked={recipientMode === "email"}
+                    onChange={() => setRecipientMode("email")}
+                  />
+                  Pozvat e-mailem
+                </label>
+              </div>
+
+              {recipientMode === "user" ? (
+                <select
+                  value={recipientId}
+                  onChange={(e) => setRecipientId(e.target.value)}
+                  required
+                  className="rounded-lg border border-kraj-border bg-kraj-bg2 px-3 py-2 outline-none focus:border-kraj-accent"
+                >
+                  <option value="">— vyber příjemce —</option>
+                  {recipients.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <>
+                  <input
+                    type="email"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    required
+                    placeholder="jmeno@email.cz"
+                    className="rounded-lg border border-kraj-border bg-kraj-bg2 px-3 py-2 outline-none focus:border-kraj-accent"
+                  />
+                  <span className="text-xs text-kraj-muted">
+                    Pokud tu ještě není, přijde mu pozvánka a bod uvidí po
+                    registraci se stejným e-mailem.
+                  </span>
+                </>
+              )}
+            </div>
           )}
         </fieldset>
       )}

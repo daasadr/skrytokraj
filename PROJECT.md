@@ -138,6 +138,8 @@ Dockerfile  docker-entrypoint.sh  compose.prod.yml  Caddyfile
 | `AUTH_URL` | veřejná URL pro Auth.js | `https://<subdoména>` |
 | `AUTH_TRUST_HOST` | důvěra proxy | `true` |
 | `NEXT_PUBLIC_MAPTILER_KEY` | podklad MapTiler | **nepovinné**; bez něj OpenFreeMap |
+| `RESEND_API_KEY` | pozvánky e-mailem | **nepovinné**; bez něj se e-mail neodešle |
+| `EMAIL_FROM` | odesílatel pozvánek | po ověření domény v Resend |
 | `POSTGRES_*` | jméno/heslo/db | jen produkční compose |
 | `SEED_ADMIN_*` | první admin | naseeduje se při startu |
 
@@ -199,6 +201,9 @@ Vzory: `.env.example` (lokál), `.env.production.example` (server). `.env` se ne
 - Admin sekce `/admin`: správa uživatelů (změna rolí), správa **Oblastí (krajů)** —
   zakládání/editace/mazání s úvodem příběhu, středem, stylem a zveřejněním.
 - Model **Region** + `regionId` na bodu (migrace `00000000000001_regions`).
+- Soukromé sdílení bodu i na **e-mail** (příjemce bez účtu ho uvidí po registraci;
+  s Resend přijde pozvánka) + zvýraznění „jen pro tebe" na mapě (zlatá záře + 🎁).
+  Migrace `00000000000003_recipient_email`.
 - Oblasti end-to-end: bod lze zařadit do oblasti; mapa má přepínač „Kraj"
   (vstup do kapitoly vycentruje mapu, ukáže úvod příběhu a jen body oblasti;
   „Všechny" = volná mapa); admin vybírá střed oblasti klepnutím do mini-mapy.

@@ -16,7 +16,7 @@ export default async function MapPage() {
 
   const isAdmin = session.user.role === "admin";
   const [points, users, regionDTOs] = await Promise.all([
-    getVisiblePoints(session.user.id),
+    getVisiblePoints(session.user.id, session.user.email),
     getUserOptions(),
     // admin vidí i skryté oblasti (může do nich zařazovat), hráč jen zveřejněné
     isAdmin ? getAllRegions() : getPublishedRegions(),

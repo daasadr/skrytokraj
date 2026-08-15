@@ -78,9 +78,13 @@ model MapPoint {
   createdById String
   createdBy   User   @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
 
-  // Příjemce u soukromé schránky (visibility = private_user)
-  recipientId String?
-  recipient   User?   @relation("Recipient", fields: [recipientId], references: [id], onDelete: SetNull)
+  // Příjemce soukromého bodu (visibility = private_user):
+  //  - recipientId: existující uživatel
+  //  - recipientEmail: pozvaný e-mail (příjemce zatím nemá účet); po registraci
+  //    s tímto e-mailem bod uvidí (párování v getVisiblePoints)
+  recipientId    String?
+  recipient      User?   @relation("Recipient", fields: [recipientId], references: [id], onDelete: SetNull)
+  recipientEmail String?
 
   // Placeholder pro budoucí AR obsah (identifikátor/odkaz na model)
   arContent String?
@@ -96,6 +100,7 @@ model MapPoint {
   @@index([type])
   @@index([visibility])
   @@index([recipientId])
+  @@index([recipientEmail])
   @@index([regionId])
   @@map("map_points")
 }

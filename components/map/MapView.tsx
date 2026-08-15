@@ -134,6 +134,7 @@ export function MapView({
         hint: p.hint ?? "",
         visibility: p.visibility,
         recipientId: p.recipientId,
+        recipientEmail: p.recipientEmail,
         arContent: p.arContent ?? "",
         regionId: p.regionId,
       },
@@ -169,6 +170,7 @@ export function MapView({
       hint: values.hint || null,
       visibility: values.visibility,
       recipientId: values.recipientId,
+      recipientEmail: values.recipientEmail,
       arContent: values.arContent || null,
       regionId: values.regionId,
     };
@@ -284,18 +286,29 @@ export function MapView({
               >
                 <span
                   title={
-                    editable
-                      ? `${p.name} — tažením přesuneš`
-                      : p.name
+                    p.forMe
+                      ? `${p.name} — jen pro tebe`
+                      : editable
+                        ? `${p.name} — tažením přesuneš`
+                        : p.name
                   }
-                  className={`flex h-7 w-7 items-center justify-center rounded-full border-2 text-sm shadow-md ${
+                  className={`relative flex h-7 w-7 items-center justify-center rounded-full border-2 text-sm shadow-md ${
                     editable
                       ? "cursor-grab border-white/70 active:cursor-grabbing"
                       : "cursor-pointer border-black/40"
+                  } ${
+                    p.forMe
+                      ? "ring-2 ring-kraj-gold shadow-[0_0_12px_rgba(233,217,164,0.95)]"
+                      : ""
                   }`}
                   style={{ backgroundColor: meta.color }}
                 >
                   {meta.emoji}
+                  {p.forMe && (
+                    <span className="pointer-events-none absolute -right-1.5 -top-2 text-[11px]">
+                      🎁
+                    </span>
+                  )}
                 </span>
               </Marker>
             );
@@ -505,8 +518,14 @@ function PointDetail({
           <span className="whitespace-pre-wrap text-kraj-fg">{point.hint}</span>
         </div>
       )}
-      {point.visibility === "private_user" && (
-        <p className="text-xs text-kraj-gold">Sdíleno soukromě</p>
+      {point.forMe ? (
+        <p className="text-xs font-medium text-kraj-gold">
+          🎁 Jen pro tebe — od {point.createdByName}
+        </p>
+      ) : (
+        point.visibility === "private_user" && (
+          <p className="text-xs text-kraj-gold">Sdíleno soukromě</p>
+        )
       )}
       {point.regionName && (
         <p className="text-xs text-kraj-mist">Oblast: {point.regionName}</p>

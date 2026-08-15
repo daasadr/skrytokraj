@@ -48,6 +48,9 @@ services:
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@skrytokraj.cz}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-skrytokraj-admin}
       SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-Kronikář (admin)}
+      # E-mailové pozvánky (nepovinné, Resend) — runtime, bez rebuildu
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-Skrytokraj <onboarding@resend.dev>}
     ports:
       # Jen localhost — na tento port se napojí hostitelská proxy (skrytokraj.<doména>).
       # 3000/3001/3002 jsou obsazené jinými projekty, proto 3003.

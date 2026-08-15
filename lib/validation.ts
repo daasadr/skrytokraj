@@ -18,6 +18,7 @@ export const createPointSchema = z.object({
   lng: z.number().min(-180).max(180),
   visibility: z.enum(["public", "private_user"]).optional(),
   recipientId: z.string().nullish(),
+  recipientEmail: z.string().max(200).nullish(),
   arContent: z.string().max(2000).nullish(),
   regionId: z.string().nullish(),
 });
@@ -30,6 +31,7 @@ export const updatePointSchema = z.object({
   lng: z.number().min(-180).max(180).optional(),
   visibility: z.enum(["public", "private_user"]).optional(),
   recipientId: z.string().nullish(),
+  recipientEmail: z.string().max(200).nullish(),
   arContent: z.string().max(2000).nullish(),
   regionId: z.string().nullish(),
   isActive: z.boolean().optional(),

@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { getVisiblePoints } from "@/lib/points";
 import { MAP_POINT_TYPES } from "@/lib/mapPoints";
 import { createPointSchema } from "@/lib/validation";
+import { sendPrivateShareInvite } from "@/lib/email";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // GET /api/points — body viditelné pro přihlášeného uživatele
 export async function GET() {
@@ -11,7 +14,7 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ error: "Nepřihlášen" }, { status: 401 });
   }
-  const points = await getVisiblePoints(session.user.id);
+  const points = await getVisiblePoints(session.user.id, session.user.email);
   return NextResponse.json({ points });
 }
 
@@ -48,32 +51,56 @@ export async function POST(request: Request) {
   }
 
   // Viditelnost: soukromá (private_user) dává smysl u sdílitelných typů
-  // (schránka, poklad) — u ostatních je vždy veřejná.
+  // (schránka, poklad) — u ostatních je vždy veřejná. Příjemce lze zadat buď
+  // jako existujícího uživatele (recipientId), nebo e-mailem (recipientEmail) —
+  // pokud e-mail patří účtu, přiřadíme rovnou; jinak pošleme pozvánku.
   let visibility: "public" | "private_user" = "public";
   let recipientId: string | null = null;
+  let recipientEmail: string | null = null;
+  let inviteEmailTo: string | null = null;
 
   if (
     MAP_POINT_TYPES[data.type].shareable &&
     data.visibility === "private_user"
   ) {
-    if (!data.recipientId) {
+    if (data.recipientId) {
+      const recipient = await prisma.user.findUnique({
+        where: { id: data.recipientId },
+        select: { id: true },
+      });
+      if (!recipient) {
+        return NextResponse.json(
+          { error: "Vybraný příjemce neexistuje." },
+          { status: 400 },
+        );
+      }
+      visibility = "private_user";
+      recipientId = recipient.id;
+    } else if (data.recipientEmail) {
+      const email = data.recipientEmail.trim().toLowerCase();
+      if (!EMAIL_RE.test(email)) {
+        return NextResponse.json(
+          { error: "Zadej platný e-mail příjemce." },
+          { status: 400 },
+        );
+      }
+      visibility = "private_user";
+      const existing = await prisma.user.findUnique({
+        where: { email },
+        select: { id: true },
+      });
+      if (existing) {
+        recipientId = existing.id; // už má účet — přiřadíme rovnou
+      } else {
+        recipientEmail = email; // pozvánka; uvidí po registraci
+        inviteEmailTo = email;
+      }
+    } else {
       return NextResponse.json(
-        { error: "Vyber příjemce soukromé schránky." },
+        { error: "Vyber příjemce, nebo zadej e-mail pro pozvánku." },
         { status: 400 },
       );
     }
-    const recipient = await prisma.user.findUnique({
-      where: { id: data.recipientId },
-      select: { id: true },
-    });
-    if (!recipient) {
-      return NextResponse.json(
-        { error: "Vybraný příjemce neexistuje." },
-        { status: 400 },
-      );
-    }
-    visibility = "private_user";
-    recipientId = recipient.id;
   }
 
   // Zařazení do oblasti (nepovinné) — ověříme, že oblast existuje.
@@ -110,12 +137,23 @@ export async function POST(request: Request) {
       lng: data.lng,
       visibility,
       recipientId,
+      recipientEmail,
       arContent: data.type === "ar_location" ? (data.arContent ?? null) : null,
       regionId,
       createdById: session.user.id,
     },
     select: { id: true },
   });
+
+  // Pozvánka e-mailem (jen pokud je Resend nastaven) — neblokuje odpověď.
+  if (inviteEmailTo) {
+    void sendPrivateShareInvite({
+      to: inviteEmailTo,
+      inviterName: session.user.name ?? "Někdo",
+      pointName: name,
+      typeLabel: MAP_POINT_TYPES[data.type].label,
+    });
+  }
 
   return NextResponse.json({ ok: true, id: created.id }, { status: 201 });
 }
