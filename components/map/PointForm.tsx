@@ -8,6 +8,7 @@ import type { UserOption } from "@/lib/points";
 export interface PointFormValues {
   name: string;
   description: string;
+  hint: string;
   visibility: "public" | "private_user";
   recipientId: string | null;
   arContent: string;
@@ -44,9 +45,12 @@ export function PointForm({
   const meta = MAP_POINT_TYPES[type];
   const isMessageBox = type === "message_box";
   const isAr = type === "ar_location";
+  const shareable = meta.shareable; // schránka i poklad
+  const showHint = !isMessageBox; // nápověda k nalezení (ne u vzkazu)
 
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [hint, setHint] = useState(initial?.hint ?? "");
   const [visibility, setVisibility] = useState<"public" | "private_user">(
     initial?.visibility ?? "public",
   );
@@ -63,9 +67,10 @@ export function PointForm({
     onSave({
       name: name.trim(),
       description: description.trim(),
-      visibility: isMessageBox ? visibility : "public",
+      hint: showHint ? hint.trim() : "",
+      visibility: shareable ? visibility : "public",
       recipientId:
-        isMessageBox && visibility === "private_user"
+        shareable && visibility === "private_user"
           ? recipientId || null
           : null,
       arContent: isAr ? arContent.trim() : "",
@@ -117,6 +122,21 @@ export function PointForm({
         />
       </label>
 
+      {showHint && (
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-kraj-muted">
+            Nápověda k nalezení (nepovinné)
+          </span>
+          <textarea
+            value={hint}
+            onChange={(e) => setHint(e.target.value)}
+            rows={2}
+            placeholder="Kde a jak to najít…"
+            className="resize-y rounded-lg border border-kraj-border bg-kraj-bg2 px-3 py-2 outline-none focus:border-kraj-accent"
+          />
+        </label>
+      )}
+
       {isAr && (
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-kraj-muted">
@@ -149,9 +169,9 @@ export function PointForm({
         </label>
       )}
 
-      {isMessageBox && (
+      {shareable && (
         <fieldset className="flex flex-col gap-2 text-sm">
-          <span className="text-kraj-muted">Kdo vzkaz uvidí</span>
+          <span className="text-kraj-muted">Kdo to uvidí</span>
           <label className="flex items-center gap-2">
             <input
               type="radio"

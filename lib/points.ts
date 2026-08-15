@@ -8,6 +8,7 @@ export interface MapPointDTO {
   type: MapPointTypeKey;
   name: string;
   description: string | null;
+  hint: string | null;
   lat: number;
   lng: number;
   visibility: "public" | "private_user";
@@ -54,6 +55,7 @@ export async function getVisiblePoints(userId: string): Promise<MapPointDTO[]> {
     type: p.type as MapPointTypeKey,
     name: p.name,
     description: p.description,
+    hint: p.hint,
     lat: p.lat,
     lng: p.lng,
     visibility: p.visibility,

@@ -47,11 +47,15 @@ export async function POST(request: Request) {
     );
   }
 
-  // Viditelnost: soukromá (private_user) dává smysl jen u schránek se vzkazem.
+  // Viditelnost: soukromá (private_user) dává smysl u sdílitelných typů
+  // (schránka, poklad) — u ostatních je vždy veřejná.
   let visibility: "public" | "private_user" = "public";
   let recipientId: string | null = null;
 
-  if (data.type === "message_box" && data.visibility === "private_user") {
+  if (
+    MAP_POINT_TYPES[data.type].shareable &&
+    data.visibility === "private_user"
+  ) {
     if (!data.recipientId) {
       return NextResponse.json(
         { error: "Vyber příjemce soukromé schránky." },
@@ -101,6 +105,7 @@ export async function POST(request: Request) {
       type: data.type,
       name,
       description: data.description ?? null,
+      hint: data.hint ?? null,
       lat: data.lat,
       lng: data.lng,
       visibility,

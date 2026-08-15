@@ -13,6 +13,7 @@ export const createPointSchema = z.object({
   type: z.enum(POINT_TYPES),
   name: z.string().trim().max(200).optional(),
   description: z.string().max(5000).nullish(),
+  hint: z.string().max(2000).nullish(),
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
   visibility: z.enum(["public", "private_user"]).optional(),
@@ -24,6 +25,7 @@ export const createPointSchema = z.object({
 export const updatePointSchema = z.object({
   name: z.string().trim().max(200).optional(),
   description: z.string().max(5000).nullish(),
+  hint: z.string().max(2000).nullish(),
   lat: z.number().min(-90).max(90).optional(),
   lng: z.number().min(-180).max(180).optional(),
   visibility: z.enum(["public", "private_user"]).optional(),

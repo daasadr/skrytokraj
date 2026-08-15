@@ -17,6 +17,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import {
   MAP_POINT_TYPES,
   ADMIN_POINT_TYPES,
+  USER_POINT_TYPES,
   DEFAULT_MAP_CENTER,
   type MapPointTypeKey,
   type RegionOption,
@@ -130,6 +131,7 @@ export function MapView({
       initial: {
         name: p.name,
         description: p.description ?? "",
+        hint: p.hint ?? "",
         visibility: p.visibility,
         recipientId: p.recipientId,
         arContent: p.arContent ?? "",
@@ -164,6 +166,7 @@ export function MapView({
     const payload = {
       name: values.name,
       description: values.description || null,
+      hint: values.hint || null,
       visibility: values.visibility,
       recipientId: values.recipientId,
       arContent: values.arContent || null,
@@ -363,13 +366,16 @@ export function MapView({
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => startPlacing("message_box")}
-                className="rounded-xl border border-kraj-border bg-kraj-bg/90 px-3 py-2 text-sm backdrop-blur transition-colors hover:bg-kraj-panel"
-              >
-                ✉️ Přidat schránku se vzkazem
-              </button>
+              {USER_POINT_TYPES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => startPlacing(t)}
+                  className="rounded-xl border border-kraj-border bg-kraj-bg/90 px-3 py-2 text-sm backdrop-blur transition-colors hover:bg-kraj-panel"
+                >
+                  {MAP_POINT_TYPES[t].emoji} {MAP_POINT_TYPES[t].label}
+                </button>
+              ))}
 
               {isAdmin && (
                 <div className="relative">
@@ -493,8 +499,14 @@ function PointDetail({
           {point.description}
         </p>
       )}
+      {point.hint && (
+        <div className="rounded-md border border-kraj-border bg-kraj-bg/50 px-2 py-1.5 text-sm">
+          <span className="text-kraj-mist">Nápověda: </span>
+          <span className="whitespace-pre-wrap text-kraj-fg">{point.hint}</span>
+        </div>
+      )}
       {point.visibility === "private_user" && (
-        <p className="text-xs text-kraj-gold">Soukromý vzkaz</p>
+        <p className="text-xs text-kraj-gold">Sdíleno soukromě</p>
       )}
       {point.regionName && (
         <p className="text-xs text-kraj-mist">Oblast: {point.regionName}</p>

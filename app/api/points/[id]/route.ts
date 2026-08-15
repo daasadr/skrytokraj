@@ -97,6 +97,7 @@ export async function PATCH(
     data: {
       name: data.name,
       description: data.description,
+      hint: data.hint,
       lat: data.lat,
       lng: data.lng,
       visibility: data.visibility,

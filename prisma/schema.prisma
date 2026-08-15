@@ -64,7 +64,8 @@ model MapPoint {
   id          String       @id @default(cuid())
   type        MapPointType
   name        String
-  description String?      @db.Text
+  description String?      @db.Text // příběh / obsah bodu
+  hint        String?      @db.Text // nápověda k nalezení (odděleně od příběhu)
 
   // Souřadnice (WGS84). PostGIS geometry sloupec se doplní později přes
   // raw SQL migraci, až budou potřeba prostorové dotazy.
