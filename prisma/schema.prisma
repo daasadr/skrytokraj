@@ -45,15 +45,22 @@ enum ReportStatus {
   dismissed // zamítnuto (v pořádku)
 }
 
+// --- Typ tokenu -------------------------------------------------------------
+enum AuthTokenType {
+  email_verify // potvrzení e-mailu
+  password_reset // obnova hesla
+}
+
 // --- Uživatel ---------------------------------------------------------------
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   name         String
   passwordHash String
-  role         Role     @default(user)
-  isBlocked    Boolean  @default(false) // zablokovaný uživatel se nepřihlásí
-  createdAt    DateTime @default(now())
+  role          Role     @default(user)
+  isBlocked     Boolean  @default(false) // zablokovaný uživatel se nepřihlásí
+  emailVerified Boolean  @default(false) // potvrzený e-mail (nepovinné)
+  createdAt     DateTime @default(now())
 
   // body, které uživatel založil
   createdPoints  MapPoint[] @relation("CreatedBy")
@@ -65,6 +72,8 @@ model User {
   completions    PointCompletion[]
   // nahlášení, která uživatel podal
   reports        Report[]          @relation("Reporter")
+  // tokeny (ověření e-mailu, obnova hesla)
+  authTokens     AuthToken[]
 
   @@map("users")
 }
@@ -184,4 +193,20 @@ model Report {
   @@index([status])
   @@index([pointId])
   @@map("reports")
+}
+
+// --- Token pro ověření e-mailu / obnovu hesla -------------------------------
+// V DB je uložený jen HASH tokenu; syrový token je jen v odkazu v e-mailu.
+model AuthToken {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String        @unique
+  type      AuthTokenType
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  @@index([userId])
+  @@map("auth_tokens")
 }

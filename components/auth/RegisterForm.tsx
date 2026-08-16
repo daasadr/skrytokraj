@@ -93,6 +93,11 @@ export function RegisterForm() {
         {pending ? "Zakládám účet…" : "Založit účet"}
       </button>
 
+      <p className="text-center text-xs text-kraj-muted">
+        Po registraci ti přijde nepovinný potvrzovací e-mail — hodí se pro
+        pozdější obnovu zapomenutého hesla.
+      </p>
+
       <p className="text-center text-sm text-kraj-muted">
         Už máš účet?{" "}
         <Link href="/prihlaseni" className="text-kraj-accent hover:underline">

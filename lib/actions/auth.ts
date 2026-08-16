@@ -4,6 +4,14 @@ import { AuthError } from "next-auth";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signIn, signOut } from "@/auth";
+import { createAuthToken, consumeAuthToken } from "@/lib/tokens";
+import {
+  sendVerifyEmail,
+  sendPasswordResetEmail,
+} from "@/lib/email";
+
+const APP_URL = process.env.AUTH_URL ?? "";
+const HOUR = 60 * 60 * 1000;
 
 export interface AuthFormState {
   error: string | null;
@@ -66,9 +74,15 @@ export async function registerAction(
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: { name, email, passwordHash, role: "user" },
   });
+
+  // Nepovinné potvrzení e-mailu (hodí se pro pozdější obnovu hesla).
+  void (async () => {
+    const raw = await createAuthToken(user.id, "email_verify", 24 * HOUR);
+    void sendVerifyEmail(user.email, user.name, `${APP_URL}/overit-email/${raw}`);
+  })();
 
   // rovnou přihlásíme a přesměrujeme na mapu
   try {
@@ -86,4 +100,88 @@ export async function registerAction(
 // --- Odhlášení --------------------------------------------------------------
 export async function logoutAction() {
   await signOut({ redirectTo: "/" });
+}
+
+// --- Zapomenuté heslo: žádost o odkaz ---------------------------------------
+export interface ForgotState {
+  error: string | null;
+  sent: boolean;
+}
+
+export async function forgotPasswordAction(
+  _prev: ForgotState,
+  formData: FormData,
+): Promise<ForgotState> {
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  if (!EMAIL_RE.test(email)) {
+    return { error: "Zadej platný e-mail.", sent: false };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (user && !user.isBlocked) {
+    const raw = await createAuthToken(user.id, "password_reset", HOUR);
+    void sendPasswordResetEmail(
+      user.email,
+      user.name,
+      `${APP_URL}/obnova-hesla/${raw}`,
+    );
+  }
+  // Vždy stejná odpověď — neprozrazujeme, jestli e-mail existuje.
+  return { error: null, sent: true };
+}
+
+// --- Obnova hesla: nastavení nového ----------------------------------------
+export interface ResetState {
+  error: string | null;
+  done: boolean;
+}
+
+export async function resetPasswordAction(
+  _prev: ResetState,
+  formData: FormData,
+): Promise<ResetState> {
+  const token = String(formData.get("token") ?? "");
+  const password = String(formData.get("password") ?? "");
+  const passwordAgain = String(formData.get("passwordAgain") ?? "");
+
+  if (password.length < 8)
+    return { error: "Heslo musí mít alespoň 8 znaků.", done: false };
+  if (password !== passwordAgain)
+    return { error: "Hesla se neshodují.", done: false };
+
+  const userId = await consumeAuthToken(token, "password_reset");
+  if (!userId) {
+    return {
+      error: "Odkaz je neplatný nebo vypršel. Požádej prosím o nový.",
+      done: false,
+    };
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+  return { error: null, done: true };
+}
+
+// --- Ověření e-mailu --------------------------------------------------------
+export interface VerifyState {
+  error: string | null;
+  ok: boolean;
+}
+
+export async function verifyEmailAction(
+  _prev: VerifyState,
+  formData: FormData,
+): Promise<VerifyState> {
+  const token = String(formData.get("token") ?? "");
+  const userId = await consumeAuthToken(token, "email_verify");
+  if (!userId) {
+    return { error: "Odkaz je neplatný nebo už byl použit.", ok: false };
+  }
+  await prisma.user.update({
+    where: { id: userId },
+    data: { emailVerified: true },
+  });
+  return { error: null, ok: true };
 }

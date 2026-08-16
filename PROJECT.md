@@ -201,6 +201,10 @@ Vzory: `.env.example` (lokál), `.env.production.example` (server). `.env` se ne
 - Admin sekce `/admin`: správa uživatelů (změna rolí), správa **Oblastí (krajů)** —
   zakládání/editace/mazání s úvodem příběhu, středem, stylem a zveřejněním.
 - Model **Region** + `regionId` na bodu (migrace `00000000000001_regions`).
+- **Obnova hesla** (`/zapomenute-heslo` → e-mail s odkazem → `/obnova-hesla/[token]`)
+  a **nepovinné potvrzení e-mailu** při registraci (`/overit-email/[token]`). Tokeny
+  hashované v DB (`AuthToken`), jednorázové, s expirací. Vyžaduje Resend. Migrace
+  `00000000000008_auth_tokens`.
 - **Podmínky použití** `/podminky` + **návod** `/navod` (+ odkazy v menu/patičce,
   souhlas při registraci). Fér pravidla: neškodit krajině/majetku, veřejná místa,
   zákaz vulgarismů/násilí/pranků, nevhodné objekty se ruší online i v terénu.

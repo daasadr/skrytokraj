@@ -92,6 +92,81 @@ export async function sendReportNotification(
   }
 }
 
+// Potvrzení e-mailu (nepovinné) — po registraci.
+export async function sendVerifyEmail(
+  to: string,
+  name: string,
+  verifyUrl: string,
+): Promise<{ sent: boolean }> {
+  if (!apiKey) return { sent: false };
+  const resend = new Resend(apiKey);
+  const html = wrap(
+    `Ahoj ${escapeHtml(name)},`,
+    `potvrď prosím svůj e-mail — je to nepovinné, ale hodí se, kdybys někdy
+     potřeboval(a) obnovit zapomenuté heslo.`,
+    "Potvrdit e-mail",
+    verifyUrl,
+  );
+  try {
+    await resend.emails.send({
+      from,
+      to,
+      subject: "Skrytokraj — potvrzení e-mailu",
+      html,
+    });
+    return { sent: true };
+  } catch (e) {
+    console.error("Resend: ověřovací e-mail selhal:", e);
+    return { sent: false };
+  }
+}
+
+// Obnova hesla.
+export async function sendPasswordResetEmail(
+  to: string,
+  name: string,
+  resetUrl: string,
+): Promise<{ sent: boolean }> {
+  if (!apiKey) return { sent: false };
+  const resend = new Resend(apiKey);
+  const html = wrap(
+    `Ahoj ${escapeHtml(name)},`,
+    `přišla žádost o obnovu hesla ke Skrytokraji. Nastav si nové heslo přes
+     tlačítko níže. Odkaz platí 1 hodinu. Pokud jsi o obnovu nežádal(a), e-mail
+     klidně ignoruj.`,
+    "Nastavit nové heslo",
+    resetUrl,
+  );
+  try {
+    await resend.emails.send({
+      from,
+      to,
+      subject: "Skrytokraj — obnova hesla",
+      html,
+    });
+    return { sent: true };
+  } catch (e) {
+    console.error("Resend: e-mail pro obnovu hesla selhal:", e);
+    return { sent: false };
+  }
+}
+
+function wrap(
+  greeting: string,
+  body: string,
+  cta: string,
+  url: string,
+): string {
+  return `
+  <div style="font-family:Arial,Helvetica,sans-serif;background:#0f1512;color:#e7ecdf;padding:28px;border-radius:14px;max-width:520px;margin:auto">
+    <p style="letter-spacing:.16em;text-transform:uppercase;color:#6f8a86;font-size:12px;margin:0 0 10px">Skrytokraj</p>
+    <p style="margin:0 0 8px">${greeting}</p>
+    <p style="color:#9fb0a0;line-height:1.6;margin:0 0 18px">${body}</p>
+    <a href="${url}" style="display:inline-block;background:#cde0b8;color:#0f1512;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:10px">${cta}</a>
+    <p style="color:#6f8a86;font-size:12px;margin:22px 0 0">Kdyby tlačítko nefungovalo, otevři: ${url}</p>
+  </div>`;
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

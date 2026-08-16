@@ -52,6 +52,15 @@ export function LoginForm() {
         {pending ? "Přihlašuji…" : "Přihlásit se"}
       </button>
 
+      <p className="text-center text-sm">
+        <Link
+          href="/zapomenute-heslo"
+          className="text-kraj-muted hover:text-kraj-fg"
+        >
+          Zapomenuté heslo?
+        </Link>
+      </p>
+
       <p className="text-center text-sm text-kraj-muted">
         Ještě nemáš účet?{" "}
         <Link href="/registrace" className="text-kraj-accent hover:underline">
