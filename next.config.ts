@@ -23,8 +23,13 @@ const CSP = [
 
 const securityHeaders = [
   {
+    // HSTS je dočasně VYPNUTÉ (max-age=0). Důvod: O2 „Ochrana" blokuje přes DNS
+    // a s aktivním HSTS z toho prohlížeč udělá tvrdý blok bez možnosti pokračovat.
+    // max-age=0 navíc řekne prohlížečům, aby si dříve uložené HSTS zapomněly.
+    // Až bude doména u O2 přeřazena jako bezpečná (a nebude se přesměrovávat),
+    // můžeme HSTS zase zapnout (max-age=31536000; includeSubDomains).
     key: "Strict-Transport-Security",
-    value: "max-age=31536000; includeSubDomains",
+    value: "max-age=0",
   },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
