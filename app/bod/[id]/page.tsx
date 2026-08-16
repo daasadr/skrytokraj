@@ -6,6 +6,7 @@ import { getVisiblePoint } from "@/lib/points";
 import { MAP_POINT_TYPES } from "@/lib/mapPoints";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { PointDetailSolve } from "@/components/map/PointDetailSolve";
+import { ReportButton } from "@/components/ReportButton";
 
 export async function generateMetadata({
   params,
@@ -109,6 +110,10 @@ export default async function PointDetailPage({
         <span>
           {point.lat.toFixed(5)}, {point.lng.toFixed(5)}
         </span>
+      </div>
+
+      <div className="mt-4">
+        <ReportButton pointId={point.id} pointName={point.name} />
       </div>
     </article>
   );

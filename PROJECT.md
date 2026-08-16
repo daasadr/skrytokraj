@@ -201,6 +201,14 @@ Vzory: `.env.example` (lokál), `.env.production.example` (server). `.env` se ne
 - Admin sekce `/admin`: správa uživatelů (změna rolí), správa **Oblastí (krajů)** —
   zakládání/editace/mazání s úvodem příběhu, středem, stylem a zveřejněním.
 - Model **Region** + `regionId` na bodu (migrace `00000000000001_regions`).
+- **Podmínky použití** `/podminky` + **návod** `/navod` (+ odkazy v menu/patičce,
+  souhlas při registraci). Fér pravidla: neškodit krajině/majetku, veřejná místa,
+  zákaz vulgarismů/násilí/pranků, nevhodné objekty se ruší online i v terénu.
+- **Nahlašování + moderace:** tlačítko „Nahlásit" u každého objektu (i soukromého).
+  Soukromé objekty nevidí ani admin — obsah se zpřístupní teprve nahlášením
+  (`/admin/nahlaseni`), kde admin může objekt smazat a autora zablokovat
+  (`User.isBlocked` → nepřihlásí se). Notifikace e-mailem (Resend) na
+  `REPORT_NOTIFY_EMAIL`. Model `Report`, migrace `00000000000007_reports`.
 - **Detail stránka bodu** `/bod/[id]`: samostatná stránka s dlouhým textem/kronikou
   (`longDescription`), velkou galerií, nápovědou a řešením úkolu; modal na mapě zůstává
   krátký a odkazuje „Otevřít detail →". Migrace `00000000000006_long_description`.

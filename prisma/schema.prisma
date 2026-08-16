@@ -38,6 +38,13 @@ enum Visibility {
   private_user // vidí jen konkrétní příjemce (recipient)
 }
 
+// --- Stav nahlášení ---------------------------------------------------------
+enum ReportStatus {
+  open // nevyřízené
+  resolved // vyřízeno (objekt odstraněn apod.)
+  dismissed // zamítnuto (v pořádku)
+}
+
 // --- Uživatel ---------------------------------------------------------------
 model User {
   id           String   @id @default(cuid())
@@ -45,6 +52,7 @@ model User {
   name         String
   passwordHash String
   role         Role     @default(user)
+  isBlocked    Boolean  @default(false) // zablokovaný uživatel se nepřihlásí
   createdAt    DateTime @default(now())
 
   // body, které uživatel založil
@@ -55,6 +63,8 @@ model User {
   createdRegions Region[]   @relation("RegionCreatedBy")
   // vyřešené úkoly / nasbírané body
   completions    PointCompletion[]
+  // nahlášení, která uživatel podal
+  reports        Report[]          @relation("Reporter")
 
   @@map("users")
 }
@@ -103,6 +113,7 @@ model MapPoint {
   updatedAt DateTime @updatedAt
 
   completions PointCompletion[]
+  reports     Report[]
 
   @@index([type])
   @@index([visibility])
@@ -153,4 +164,24 @@ model PointCompletion {
   @@unique([userId, pointId])
   @@index([pointId])
   @@map("point_completions")
+}
+
+// --- Nahlášení nevhodného obsahu --------------------------------------------
+// Umožňuje nahlásit i soukromý objekt. Teprve nahlášením se obsah zpřístupní
+// adminovi (jinak soukromé objekty nevidí ani admin). Viz PROJECT.md / podmínky.
+model Report {
+  id         String       @id @default(cuid())
+  pointId    String
+  point      MapPoint     @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User         @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  category   String // vulgarity | violence | prank | bad_intent | other
+  message    String       @db.Text
+  status     ReportStatus @default(open)
+  createdAt  DateTime     @default(now())
+  resolvedAt DateTime?
+
+  @@index([status])
+  @@index([pointId])
+  @@map("reports")
 }

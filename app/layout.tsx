@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { auth } from "@/auth";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 const geistSans = Geist({
@@ -68,6 +69,7 @@ export default async function RootLayout({
           }
         />
         <main className="flex-1 flex flex-col">{children}</main>
+        <SiteFooter />
         <ServiceWorkerRegister />
       </body>
     </html>

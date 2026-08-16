@@ -36,6 +36,12 @@ export default async function AdminLayout({
           >
             Uživatelé
           </Link>
+          <Link
+            href="/admin/nahlaseni"
+            className="rounded-md px-3 py-1.5 text-kraj-muted hover:bg-kraj-panel hover:text-kraj-fg"
+          >
+            Nahlášení
+          </Link>
         </nav>
       </div>
       {children}

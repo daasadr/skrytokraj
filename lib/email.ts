@@ -52,6 +52,46 @@ export async function sendPrivateShareInvite(
   }
 }
 
+interface ReportOpts {
+  pointName: string;
+  category: string;
+  message: string;
+  reporterName: string;
+}
+
+// Upozornění adminovi na nové nahlášení nevhodného obsahu.
+export async function sendReportNotification(
+  opts: ReportOpts,
+): Promise<{ sent: boolean }> {
+  const to = process.env.REPORT_NOTIFY_EMAIL || "daasa.d@seznam.cz";
+  if (!apiKey) return { sent: false };
+
+  const resend = new Resend(apiKey);
+  const adminUrl = `${appUrl}/admin/nahlaseni`;
+  const html = `
+  <div style="font-family:Arial,Helvetica,sans-serif;color:#111;max-width:560px">
+    <h2>Skrytokraj — nové nahlášení</h2>
+    <p><strong>Objekt:</strong> ${escapeHtml(opts.pointName)}</p>
+    <p><strong>Důvod:</strong> ${escapeHtml(opts.category)}</p>
+    <p><strong>Popis:</strong><br>${escapeHtml(opts.message).replace(/\n/g, "<br>")}</p>
+    <p><strong>Nahlásil(a):</strong> ${escapeHtml(opts.reporterName)}</p>
+    <p><a href="${adminUrl}">Otevřít přehled nahlášení →</a></p>
+  </div>`;
+
+  try {
+    await resend.emails.send({
+      from,
+      to,
+      subject: `Skrytokraj — nahlášení: ${opts.pointName}`,
+      html,
+    });
+    return { sent: true };
+  } catch (e) {
+    console.error("Resend: odeslání nahlášení selhalo:", e);
+    return { sent: false };
+  }
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

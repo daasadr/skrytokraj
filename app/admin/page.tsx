@@ -5,12 +5,14 @@ import { prisma } from "@/lib/prisma";
 export const metadata: Metadata = { title: "Správa" };
 
 export default async function AdminHomePage() {
-  const [userCount, adminCount, pointCount, regionCount] = await Promise.all([
-    prisma.user.count(),
-    prisma.user.count({ where: { role: "admin" } }),
-    prisma.mapPoint.count(),
-    prisma.region.count(),
-  ]);
+  const [userCount, adminCount, pointCount, regionCount, openReports] =
+    await Promise.all([
+      prisma.user.count(),
+      prisma.user.count({ where: { role: "admin" } }),
+      prisma.mapPoint.count(),
+      prisma.region.count(),
+      prisma.report.count({ where: { status: "open" } }),
+    ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -19,9 +21,17 @@ export default async function AdminHomePage() {
         <Stat label="Admini" value={adminCount} />
         <Stat label="Oblasti" value={regionCount} />
         <Stat label="Body na mapě" value={pointCount} />
+        <Stat label="Nahlášení" value={openReports} />
       </div>
 
       <div className="flex flex-col gap-2">
+        {openReports > 0 && (
+          <Card
+            href="/admin/nahlaseni"
+            title={`⚠ Nahlášení k vyřízení (${openReports})`}
+            desc="Nevhodně nahlášené objekty — zkontroluj, případně smaž a zablokuj."
+          />
+        )}
         <Card
           href="/admin/oblasti"
           title="Oblasti (kraje)"

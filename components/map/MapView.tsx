@@ -28,6 +28,7 @@ import { PointForm, type PointFormValues } from "./PointForm";
 import { MapLegend } from "./MapLegend";
 import { QuestSolve } from "./QuestSolve";
 import { PhotoGallery } from "@/components/PhotoGallery";
+import { ReportButton } from "@/components/ReportButton";
 
 interface MapViewProps {
   initialPoints: MapPointDTO[];
@@ -627,6 +628,10 @@ function PointDetail({
           </button>
         </div>
       )}
+
+      <div className="mt-1 border-t border-kraj-border pt-2">
+        <ReportButton pointId={point.id} pointName={point.name} />
+      </div>
     </div>
   );
 }

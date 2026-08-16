@@ -51,6 +51,8 @@ services:
       # E-mailové pozvánky (nepovinné, Resend) — runtime, bez rebuildu
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-Skrytokraj <onboarding@resend.dev>}
+      # Kam chodí upozornění na nahlášení (default v kódu: daasa.d@seznam.cz)
+      REPORT_NOTIFY_EMAIL: ${REPORT_NOTIFY_EMAIL:-daasa.d@seznam.cz}
       # Nahrané fotky (perzistentní disk)
       UPLOAD_DIR: /app/uploads
     volumes:

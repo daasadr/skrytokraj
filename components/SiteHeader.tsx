@@ -13,6 +13,7 @@ const NAV = [
   { href: "/", label: "Úvod" },
   { href: "/mapa", label: "Mapa" },
   { href: "/kronika", label: "Kronika" },
+  { href: "/navod", label: "Návod" },
 ];
 
 export function SiteHeader({ user }: SiteHeaderProps) {

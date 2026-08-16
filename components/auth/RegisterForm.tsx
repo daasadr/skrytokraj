@@ -64,6 +64,21 @@ export function RegisterForm() {
         />
       </label>
 
+      <label className="flex items-start gap-2 text-sm text-kraj-muted">
+        <input type="checkbox" name="terms" required className="mt-1" />
+        <span>
+          Souhlasím s{" "}
+          <Link
+            href="/podminky"
+            target="_blank"
+            className="text-kraj-accent hover:underline"
+          >
+            podmínkami použití
+          </Link>{" "}
+          (fér hra, žádné vulgarismy ani pranky).
+        </span>
+      </label>
+
       {state.error && (
         <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
           {state.error}

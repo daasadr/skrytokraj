@@ -50,7 +50,9 @@ export async function registerAction(
     .toLowerCase();
   const password = String(formData.get("password") ?? "");
   const passwordAgain = String(formData.get("passwordAgain") ?? "");
+  const terms = formData.get("terms");
 
+  if (!terms) return { error: "Pro registraci je potřeba souhlas s podmínkami." };
   if (!name) return { error: "Zadej jméno nebo přezdívku." };
   if (!EMAIL_RE.test(email)) return { error: "Zadej platný e-mail." };
   if (password.length < 8)
