@@ -71,11 +71,11 @@ export const USER_POINT_TYPES = ALL_TYPES.filter(
   (k) => !MAP_POINT_TYPES[k].adminOnly,
 );
 
-// Výchozí střed mapy — Petřvald na Novojičínsku.
+// Výchozí střed mapy — Petřvald (okres Nový Jičín) na Novojičínsku.
 export const DEFAULT_MAP_CENTER = {
-  longitude: 18.1667,
-  latitude: 49.755,
-  zoom: 12.5,
+  longitude: 18.0547,
+  latitude: 49.6872,
+  zoom: 13,
 };
 
 // Oblast (kraj) pro použití v klientských komponentách mapy (client-safe,
