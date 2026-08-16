@@ -11,6 +11,7 @@ const MAX_PHOTOS = 8;
 export interface PointFormValues {
   name: string;
   description: string;
+  longDescription: string;
   hint: string;
   answer: string;
   imageUrls: string[];
@@ -57,6 +58,9 @@ export function PointForm({
 
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [longDescription, setLongDescription] = useState(
+    initial?.longDescription ?? "",
+  );
   const [hint, setHint] = useState(initial?.hint ?? "");
   const [answer, setAnswer] = useState(initial?.answer ?? "");
   const [visibility, setVisibility] = useState<"public" | "private_user">(
@@ -119,6 +123,7 @@ export function PointForm({
     onSave({
       name: name.trim(),
       description: description.trim(),
+      longDescription: longDescription.trim(),
       hint: showHint ? hint.trim() : "",
       answer: showAnswer ? answer.trim() : "",
       imageUrls: images,
@@ -176,6 +181,19 @@ export function PointForm({
           onChange={(e) => setDescription(e.target.value)}
           required={isMessageBox}
           rows={isMessageBox ? 4 : 3}
+          className="resize-y rounded-lg border border-kraj-border bg-kraj-bg2 px-3 py-2 outline-none focus:border-kraj-accent"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="text-kraj-muted">
+          Dlouhý text / kronika (nepovinné) — zobrazí se až v detailu
+        </span>
+        <textarea
+          value={longDescription}
+          onChange={(e) => setLongDescription(e.target.value)}
+          rows={4}
+          placeholder="Rozsáhlejší příběh, záznam kroniky…"
           className="resize-y rounded-lg border border-kraj-border bg-kraj-bg2 px-3 py-2 outline-none focus:border-kraj-accent"
         />
       </label>

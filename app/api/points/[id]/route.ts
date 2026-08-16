@@ -126,6 +126,7 @@ export async function PATCH(
     data: {
       name: data.name,
       description: data.description,
+      longDescription: data.longDescription,
       hint: data.hint,
       answer:
         data.answer === undefined

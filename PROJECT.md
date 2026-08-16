@@ -201,6 +201,11 @@ Vzory: `.env.example` (lokál), `.env.production.example` (server). `.env` se ne
 - Admin sekce `/admin`: správa uživatelů (změna rolí), správa **Oblastí (krajů)** —
   zakládání/editace/mazání s úvodem příběhu, středem, stylem a zveřejněním.
 - Model **Region** + `regionId` na bodu (migrace `00000000000001_regions`).
+- **Detail stránka bodu** `/bod/[id]`: samostatná stránka s dlouhým textem/kronikou
+  (`longDescription`), velkou galerií, nápovědou a řešením úkolu; modal na mapě zůstává
+  krátký a odkazuje „Otevřít detail →". Migrace `00000000000006_long_description`.
+- **Prohlížeč fotek (galerie):** klik otevře fotku v appce, šipky/švihnutí přepínají,
+  zpětné tlačítko zavře jen galerii (ne appku). Komponenta `PhotoGallery`.
 - **Offline PWA:** service worker cachuje app shell (otevře se offline), statické
   buildy, a **mapové dlaždice/styl podle toho, co si projdeš online** (kraj pak funguje
   offline). Poloha (GPS) funguje offline sama. Offline *zápis* bodu (fronta) a stažení

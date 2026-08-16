@@ -13,6 +13,7 @@ export const createPointSchema = z.object({
   type: z.enum(POINT_TYPES),
   name: z.string().trim().max(200).optional(),
   description: z.string().max(5000).nullish(),
+  longDescription: z.string().max(20000).nullish(),
   hint: z.string().max(2000).nullish(),
   answer: z.string().max(200).nullish(),
   imageUrls: z.array(z.string().max(300)).max(8).optional(),
@@ -28,6 +29,7 @@ export const createPointSchema = z.object({
 export const updatePointSchema = z.object({
   name: z.string().trim().max(200).optional(),
   description: z.string().max(5000).nullish(),
+  longDescription: z.string().max(20000).nullish(),
   hint: z.string().max(2000).nullish(),
   answer: z.string().max(200).nullish(),
   imageUrls: z.array(z.string().max(300)).max(8).optional(),

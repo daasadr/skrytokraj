@@ -66,9 +66,10 @@ model MapPoint {
   id          String       @id @default(cuid())
   type        MapPointType
   name        String
-  description String?      @db.Text // příběh / obsah bodu
-  hint        String?      @db.Text // nápověda k nalezení (odděleně od příběhu)
-  answer      String? // správná odpověď/kód u úkolu (hráčům se neposílá)
+  description     String? @db.Text // krátký popis (ukazuje se i v modalu)
+  longDescription String? @db.Text // dlouhý text / kronika (jen na detail stránce)
+  hint            String? @db.Text // nápověda k nalezení (odděleně od příběhu)
+  answer          String? // správná odpověď/kód u úkolu (hráčům se neposílá)
   imageUrls   String[] // fotky (nepovinné) — optimalizované v prohlížeči před uploadem
 
   // Souřadnice (WGS84). PostGIS geometry sloupec se doplní později přes

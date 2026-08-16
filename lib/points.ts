@@ -8,6 +8,7 @@ export interface MapPointDTO {
   type: MapPointTypeKey;
   name: string;
   description: string | null;
+  longDescription: string | null;
   hint: string | null;
   imageUrls: string[];
   /** má bod odpověď k zadání (úkol k vyřešení)? */
@@ -70,40 +71,105 @@ export async function getVisiblePoints(
     orderBy: { createdAt: "desc" },
   });
 
-  return points.map((p) => {
-    const forMe =
-      p.visibility === "private_user" &&
-      p.createdById !== userId &&
-      (p.recipientId === userId ||
-        (!!email && p.recipientEmail?.toLowerCase() === email));
+  return points.map((p) => toPointDTO(p, userId, email, isAdmin));
+}
 
-    // Odpověď smí vidět jen admin nebo autor bodu — nikdy běžný hráč.
-    const canSeeAnswer = isAdmin || p.createdById === userId;
+interface PointWithRelations {
+  id: string;
+  type: string;
+  name: string;
+  description: string | null;
+  longDescription: string | null;
+  hint: string | null;
+  answer: string | null;
+  imageUrls: string[];
+  lat: number;
+  lng: number;
+  visibility: "public" | "private_user";
+  recipientId: string | null;
+  recipientEmail: string | null;
+  arContent: string | null;
+  regionId: string | null;
+  createdById: string;
+  createdAt: Date;
+  createdBy: { name: string };
+  region: { name: string } | null;
+  completions: { id: string }[];
+}
 
-    return {
-      id: p.id,
-      type: p.type as MapPointTypeKey,
-      name: p.name,
-      description: p.description,
-      hint: p.hint,
-      imageUrls: p.imageUrls,
-      hasAnswer: !!p.answer && p.answer.length > 0,
-      solved: p.completions.length > 0,
-      answer: canSeeAnswer ? p.answer : null,
-      lat: p.lat,
-      lng: p.lng,
-      visibility: p.visibility,
-      recipientId: p.recipientId,
-      recipientEmail: p.recipientEmail,
-      forMe,
-      arContent: p.arContent,
-      regionId: p.regionId,
-      regionName: p.region?.name ?? null,
-      createdById: p.createdById,
-      createdByName: p.createdBy.name,
-      createdAt: p.createdAt.toISOString(),
-    };
+function toPointDTO(
+  p: PointWithRelations,
+  userId: string,
+  email: string | null,
+  isAdmin: boolean,
+): MapPointDTO {
+  const forMe =
+    p.visibility === "private_user" &&
+    p.createdById !== userId &&
+    (p.recipientId === userId ||
+      (!!email && p.recipientEmail?.toLowerCase() === email));
+
+  // Odpověď smí vidět jen admin nebo autor bodu — nikdy běžný hráč.
+  const canSeeAnswer = isAdmin || p.createdById === userId;
+
+  return {
+    id: p.id,
+    type: p.type as MapPointTypeKey,
+    name: p.name,
+    description: p.description,
+    longDescription: p.longDescription,
+    hint: p.hint,
+    imageUrls: p.imageUrls,
+    hasAnswer: !!p.answer && p.answer.length > 0,
+    solved: p.completions.length > 0,
+    answer: canSeeAnswer ? p.answer : null,
+    lat: p.lat,
+    lng: p.lng,
+    visibility: p.visibility,
+    recipientId: p.recipientId,
+    recipientEmail: p.recipientEmail,
+    forMe,
+    arContent: p.arContent,
+    regionId: p.regionId,
+    regionName: p.region?.name ?? null,
+    createdById: p.createdById,
+    createdByName: p.createdBy.name,
+    createdAt: p.createdAt.toISOString(),
+  };
+}
+
+/**
+ * Jeden bod pro detail stránku — jen pokud je pro daného uživatele viditelný
+ * (veřejný, jemu soukromě sdílený, nebo jeho vlastní).
+ */
+export async function getVisiblePoint(
+  id: string,
+  userId: string,
+  userEmail?: string | null,
+  isAdmin = false,
+): Promise<MapPointDTO | null> {
+  const email = userEmail?.toLowerCase() ?? null;
+  const p = await prisma.mapPoint.findFirst({
+    where: {
+      id,
+      isActive: true,
+      OR: [
+        { visibility: "public" },
+        { visibility: "private_user", recipientId: userId },
+        ...(email
+          ? [{ visibility: "private_user" as const, recipientEmail: email }]
+          : []),
+        { createdById: userId },
+      ],
+    },
+    include: {
+      createdBy: { select: { name: true } },
+      region: { select: { name: true } },
+      completions: { where: { userId }, select: { id: true } },
+    },
   });
+  if (!p) return null;
+  return toPointDTO(p, userId, email, isAdmin);
 }
 
 /** Seznam uživatelů pro výběr příjemce soukromé schránky (jen id + jméno). */

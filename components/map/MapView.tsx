@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import Link from "next/link";
 import Map, {
   Marker,
   Popup,
@@ -25,6 +26,8 @@ import {
 import type { MapPointDTO, UserOption } from "@/lib/points";
 import { PointForm, type PointFormValues } from "./PointForm";
 import { MapLegend } from "./MapLegend";
+import { QuestSolve } from "./QuestSolve";
+import { PhotoGallery } from "@/components/PhotoGallery";
 
 interface MapViewProps {
   initialPoints: MapPointDTO[];
@@ -144,6 +147,7 @@ export function MapView({
       initial: {
         name: p.name,
         description: p.description ?? "",
+        longDescription: p.longDescription ?? "",
         hint: p.hint ?? "",
         answer: p.answer ?? "",
         imageUrls: p.imageUrls,
@@ -182,6 +186,7 @@ export function MapView({
     const payload = {
       name: values.name,
       description: values.description || null,
+      longDescription: values.longDescription || null,
       hint: values.hint || null,
       answer: values.answer || null,
       imageUrls: values.imageUrls,
@@ -541,53 +546,6 @@ export function MapView({
   );
 }
 
-// --- Zadání odpovědi na úkol -------------------------------------------------
-function QuestSolve({
-  onSolve,
-}: {
-  onSolve: (answer: string) => Promise<boolean>;
-}) {
-  const [value, setValue] = useState("");
-  const [status, setStatus] = useState<"idle" | "checking" | "wrong">("idle");
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!value.trim()) return;
-    setStatus("checking");
-    const ok = await onSolve(value.trim());
-    // při správné odpovědi se komponenta odmontuje (bod je „solved")
-    if (!ok) setStatus("wrong");
-  }
-
-  return (
-    <form onSubmit={submit} className="flex flex-col gap-1.5">
-      <span className="text-xs text-kraj-muted">Zadej odpověď:</span>
-      <div className="flex gap-1.5">
-        <input
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value);
-            setStatus("idle");
-          }}
-          className="flex-1 rounded-md border border-kraj-border bg-kraj-bg2 px-2 py-1 text-sm outline-none focus:border-kraj-accent"
-        />
-        <button
-          type="submit"
-          disabled={status === "checking"}
-          className="rounded-md bg-kraj-accent px-2.5 py-1 text-sm font-medium text-kraj-bg disabled:opacity-60"
-        >
-          {status === "checking" ? "…" : "Ověřit"}
-        </button>
-      </div>
-      {status === "wrong" && (
-        <span className="text-xs text-red-300">
-          Není to ono. Zkus naslouchat pozorněji. 🌿
-        </span>
-      )}
-    </form>
-  );
-}
-
 // --- Detail bodu v popupu ---------------------------------------------------
 function PointDetail({
   point,
@@ -612,25 +570,18 @@ function PointDetail({
         {meta.emoji} {meta.label}
       </span>
       <h3 className="text-base font-semibold">{point.name}</h3>
-      {point.imageUrls.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {point.imageUrls.map((url) => (
-            <a key={url} href={url} target="_blank" rel="noreferrer">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={url}
-                alt="fotka bodu"
-                className="h-16 w-16 rounded-md border border-kraj-border object-cover"
-              />
-            </a>
-          ))}
-        </div>
-      )}
+      {point.imageUrls.length > 0 && <PhotoGallery urls={point.imageUrls} />}
       {point.description && (
         <p className="whitespace-pre-wrap text-sm text-kraj-muted">
           {point.description}
         </p>
       )}
+      <Link
+        href={`/bod/${point.id}`}
+        className="text-sm text-kraj-accent hover:underline"
+      >
+        Otevřít detail →
+      </Link>
       {point.hint && (
         <div className="rounded-md border border-kraj-border bg-kraj-bg/50 px-2 py-1.5 text-sm">
           <span className="text-kraj-mist">Nápověda: </span>

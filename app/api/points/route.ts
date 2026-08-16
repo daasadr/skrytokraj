@@ -136,6 +136,7 @@ export async function POST(request: Request) {
       type: data.type,
       name,
       description: data.description ?? null,
+      longDescription: data.longDescription ?? null,
       hint: data.hint ?? null,
       answer: data.answer?.trim() ? data.answer.trim() : null,
       imageUrls: data.imageUrls ?? [],
